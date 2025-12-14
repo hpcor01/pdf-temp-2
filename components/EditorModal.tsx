@@ -414,7 +414,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.1));
   const handleZoomReset = () => setZoom(1);
 
-  const handleAiAction = async (action: 'bg' | 'enhance') => {
+ /* const handleAiAction = async (action: 'bg' | 'enhance') => {
     if (isProcessing) return;
     setIsProcessing(true);
     try {
@@ -430,7 +430,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
     } finally {
       setIsProcessing(false);
     }
-  };
+  };*/
 
   const handleApplyEraser = async () => {
     if (maskLines.length === 0 || isProcessing) return;
@@ -592,26 +592,26 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
             <div className="space-y-4">
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t.aiTools}</div>
               
-              <button 
+              {/*<button 
                 onClick={() => { setActiveTool('none'); handleAiAction('bg'); }}
                 disabled={isProcessing || activeTool === 'eraser' || activeTool === 'crop'}
                 className="w-full flex items-center p-3 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-200 disabled:opacity-50"
               >
                 <Eraser className="mr-3 text-emerald-500 dark:text-emerald-400" size={18} />
                 {t.removeBg}
-              </button>
+              </button>*/}
 
-              <button 
+              {/*<button 
                 onClick={() => { setActiveTool('none'); handleAiAction('enhance'); }}
                 disabled={isProcessing || activeTool === 'eraser' || activeTool === 'crop'}
                 className="w-full flex items-center p-3 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-200 disabled:opacity-50"
               >
                 <Wand2 className="mr-3 text-blue-500 dark:text-blue-400" size={18} />
                 {t.enhance}
-              </button>
+              </button> */}
 
-              {/* Eraser */}
-            /*<div className={`border rounded-lg p-3 transition ${activeTool === 'eraser' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}`}>
+              {/* Eraser 
+                <div className={`border rounded-lg p-3 transition ${activeTool === 'eraser' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}`}>
                 <button 
                   onClick={() => setActiveTool(activeTool === 'eraser' ? 'none' : 'eraser')}
                   className="w-full flex items-center text-left mb-2 text-gray-700 dark:text-gray-200"
@@ -626,7 +626,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
                     <button onClick={handleApplyEraser} disabled={maskLines.length === 0 || isProcessing} className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium disabled:opacity-50 transition">{t.applyEraser}</button>
                   </div>
                 )}
-              </div>*/
+              </div> */}
 
               <div className="border-t border-gray-200 dark:border-gray-700 my-4" />
               
