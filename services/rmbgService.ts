@@ -5,18 +5,31 @@ export async function removeBackground(imageBase64: string): Promise<string> {
     throw new Error('VITE_RMBG_API_URL not defined');
   }
 
-  const res = await fetch(`${API_URL}/remove-bg`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ image: imageBase64 }),
-  });
+  try {
+    const res = await fetchWithTimeout(
+      `${API_URL}/remove-bg`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageBase64 }),
+      },
+      30000
+    );
 
-  if (!res.ok) {
-    throw new Error(`RMBG failed: ${res.status}`);
+    if (!res.ok) {
+      throw new Error(`RMBG failed: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data?.image) {
+      throw new Error('Invalid RMBG response');
+    }
+
+    return data.image;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('RMBG timeout (cold start)');
+    }
+    throw err;
   }
-
-  const data = await res.json();
-  return data.image;
 }
