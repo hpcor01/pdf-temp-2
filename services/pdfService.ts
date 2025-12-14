@@ -37,7 +37,7 @@ const convertImageToPngBytes = async (url: string): Promise<Uint8Array> => {
 };
 
 const downloadBlob = (data: Uint8Array, filename: string, mimeType: string) => {
-  const blob = new Blob([data], { type: mimeType });
+  const blob = new Blob([data.buffer], { type: mimeType });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
