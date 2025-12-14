@@ -22,14 +22,32 @@ export const urlToBase64 = async (url: string): Promise<string> => {
   });
 };
 
-export const removeBackground = async (imageUrl: string): Promise<string> => {
-  const ai = getAiClient();
-  const base64Data = await urlToBase64(imageUrl);
-
-  const model = "gemini-2.5-flash-image";
-  const prompt = "Remove the background from this image. Return ONLY the object with a white or transparent background. Keep the main subject intact.";
-
+// Retry wrapper to handle Rate Limits (429)
+async function callWithRetry<T>(operation: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
   try {
+    return await operation();
+  } catch (error: any) {
+    // Check for 429 (Too Many Requests) or 503 (Service Unavailable)
+    const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('limit');
+    const isServerOverload = error.status === 503;
+
+    if (retries > 0 && (isRateLimit || isServerOverload)) {
+      console.warn(`Rate limit hit, retrying in ${delay}ms... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return callWithRetry(operation, retries - 1, delay * 2); // Exponential backoff
+    }
+    throw error;
+  }
+}
+
+export const removeBackground = async (imageUrl: string): Promise<string> => {
+  return callWithRetry(async () => {
+    const ai = getAiClient();
+    const base64Data = await urlToBase64(imageUrl);
+
+    const model = "gemini-2.5-flash-image";
+    const prompt = "Remove the background from this image. Return ONLY the object with a white or transparent background. Keep the main subject intact.";
+
     const response = await ai.models.generateContent({
       model: model,
       contents: {
@@ -45,8 +63,6 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
       },
     });
 
-    // We expect the model to return an image in the response
-    // Iterate through parts to find the image
     const parts = response.candidates?.[0]?.content?.parts;
     if (parts) {
       for (const part of parts) {
@@ -57,20 +73,17 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
     }
     
     throw new Error("No image returned from AI");
-  } catch (error) {
-    console.error("Gemini Background Removal Error:", error);
-    throw error;
-  }
+  });
 };
 
 export const enhanceImage = async (imageUrl: string): Promise<string> => {
-  const ai = getAiClient();
-  const base64Data = await urlToBase64(imageUrl);
+  return callWithRetry(async () => {
+    const ai = getAiClient();
+    const base64Data = await urlToBase64(imageUrl);
 
-  const model = "gemini-2.5-flash-image";
-  const prompt = "Enhance the sharpness, clarity, and lighting of this image. Make it look professional and high quality. Return the enhanced image.";
+    const model = "gemini-2.5-flash-image";
+    const prompt = "Enhance the sharpness, clarity, and lighting of this image. Make it look professional and high quality. Return the enhanced image.";
 
-  try {
     const response = await ai.models.generateContent({
       model: model,
       contents: {
@@ -96,22 +109,17 @@ export const enhanceImage = async (imageUrl: string): Promise<string> => {
     }
     
     throw new Error("No image returned from AI");
-  } catch (error) {
-    console.error("Gemini Enhancement Error:", error);
-    throw error;
-  }
+  });
 };
 
 export const magicEraser = async (compositeImageUrl: string): Promise<string> => {
-  const ai = getAiClient();
-  const base64Data = await urlToBase64(compositeImageUrl);
+  return callWithRetry(async () => {
+    const ai = getAiClient();
+    const base64Data = await urlToBase64(compositeImageUrl);
 
-  const model = "gemini-2.5-flash-image";
-  // We send the image which ALREADY has the red scribbles on it.
-  // We instruct the model to treat the red marks as the mask.
-  const prompt = "The areas marked with translucent RED color in this image indicate objects to be removed. Remove the red markings and the objects beneath them. Fill the erased area naturally to match the surrounding background texture and lighting. Return the clean, edited image.";
+    const model = "gemini-2.5-flash-image";
+    const prompt = "The areas marked with translucent RED color in this image indicate objects to be removed. Remove the red markings and the objects beneath them. Fill the erased area naturally to match the surrounding background texture and lighting. Return the clean, edited image.";
 
-  try {
     const response = await ai.models.generateContent({
       model: model,
       contents: {
@@ -137,21 +145,18 @@ export const magicEraser = async (compositeImageUrl: string): Promise<string> =>
     }
     
     throw new Error("No image returned from AI");
-  } catch (error) {
-    console.error("Gemini Magic Eraser Error:", error);
-    throw error;
-  }
+  });
 };
 
 export const identifyPageNumber = async (imageUrl: string): Promise<number> => {
-  const ai = getAiClient();
-  const base64Data = await urlToBase64(imageUrl);
+  return callWithRetry(async () => {
+    const ai = getAiClient();
+    const base64Data = await urlToBase64(imageUrl);
 
-  // Use gemini-2.5-flash for multimodal reasoning (image + text prompt)
-  const model = "gemini-2.5-flash";
-  const prompt = "Identify the page number visible in this document image. Return ONLY the number as an integer. If no page number is clearly visible or found, return -1.";
+    // Use gemini-2.5-flash for multimodal reasoning (image + text prompt)
+    const model = "gemini-2.5-flash";
+    const prompt = "Identify the page number visible in this document image. Return ONLY the number as an integer. If no page number is clearly visible or found, return -1.";
 
-  try {
     const response = await ai.models.generateContent({
       model: model,
       contents: {
@@ -177,8 +182,5 @@ export const identifyPageNumber = async (imageUrl: string): Promise<number> => {
     }
     
     return -1;
-  } catch (error) {
-    console.error("Gemini Page Identification Error:", error);
-    return -1;
-  }
+  });
 };

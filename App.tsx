@@ -203,19 +203,29 @@ const App = () => {
     setDocuments(prev => prev.map(d => d.id === docId ? { ...d, isSorting: true } : d));
 
     try {
-      // Create a list of promises to process images in parallel (up to a limit, but for now allow all)
-      const sortPromises = doc.items.map(async (item) => {
-        if (item.type !== 'image') return { item, pageNum: -1 };
-        
-        const pageNum = await identifyPageNumber(item.url);
-        return { item, pageNum };
-      });
+      const results: { item: ImageItem; pageNum: number }[] = [];
+      const itemsToProcess = doc.items.filter(i => i.type === 'image');
+      const itemsToSkip = doc.items.filter(i => i.type !== 'image');
 
-      const results = await Promise.all(sortPromises);
+      // Sequential Processing to avoid Rate Limits
+      for (const item of itemsToProcess) {
+        try {
+          // Identify page number
+          const pageNum = await identifyPageNumber(item.url);
+          results.push({ item, pageNum });
+          
+          // Small delay between requests to be nice to the API
+          await new Promise(r => setTimeout(r, 500));
+        } catch (e) {
+          console.error(`Error sorting item ${item.id}`, e);
+          results.push({ item, pageNum: -1 });
+        }
+      }
+
+      // Add back non-image items
+      itemsToSkip.forEach(item => results.push({ item, pageNum: -1 }));
 
       // Sort logic: 
-      // Items with detected numbers come first, sorted ascending.
-      // Items with -1 come last, maintaining original order relative to each other.
       results.sort((a, b) => {
         if (a.pageNum !== -1 && b.pageNum !== -1) return a.pageNum - b.pageNum;
         if (a.pageNum !== -1) return -1;
@@ -253,18 +263,9 @@ const App = () => {
        return;
     }
 
-    // 1. Mark Items as Processing
-    setDocuments(prev => prev.map(doc => {
-      if (!doc.selected) return doc;
-      return {
-        ...doc,
-        items: doc.items.map(item => item.type === 'image' ? { ...item, processing: true } : item)
-      };
-    }));
-
     setIsProcessing(true);
 
-    // 2. Collect all tasks
+    // Collect all tasks first
     const tasks: { docId: string, itemId: string, url: string }[] = [];
     docsToProcess.forEach(doc => {
       doc.items.forEach(item => {
@@ -274,49 +275,63 @@ const App = () => {
       });
     });
 
+    // Mark all as processing initially
+    setDocuments(prev => prev.map(doc => {
+      if (!doc.selected) return doc;
+      return {
+        ...doc,
+        items: doc.items.map(item => item.type === 'image' ? { ...item, processing: true } : item)
+      };
+    }));
+
     try {
-      // 3. Process in parallel (mapped to promises)
-      // Note: In a production app, we might want to limit concurrency (p-limit) to avoid API rate limits.
-      // For this demo, we assume the user processes a reasonable amount or the API handles it.
-      const results = await Promise.allSettled(tasks.map(async (task) => {
-         const newUrl = await removeBackground(task.url);
-         return { ...task, newUrl };
-      }));
-
-      // 4. Update State with Results
-      setDocuments(prev => prev.map(doc => {
-         if (!doc.selected) return doc;
-         
-         const newItems = doc.items.map(item => {
-            if (item.type !== 'image') return item;
-            
-            // Find result for this item
-            const result = results.find(r => r.status === 'fulfilled' && r.value.itemId === item.id);
-            
-            if (result && result.status === 'fulfilled') {
-               return { ...item, url: result.value.newUrl, processing: false };
-            } else {
-               // If failed, keep original but stop processing spinner
-               return { ...item, processing: false };
-            }
-         });
-
-         return { ...doc, items: newItems };
-      }));
+      // Process Sequentially (One by One) to avoid Rate Limit
+      let successCount = 0;
       
-      // Check for any failures
-      const hasErrors = results.some(r => r.status === 'rejected');
-      if (hasErrors) {
+      for (const task of tasks) {
+        try {
+          const newUrl = await removeBackground(task.url);
+          successCount++;
+
+          // Update this specific item immediately
+          setDocuments(prev => prev.map(doc => {
+             if (doc.id !== task.docId) return doc;
+             return {
+                ...doc,
+                items: doc.items.map(item => {
+                   if (item.id !== task.itemId) return item;
+                   return { ...item, url: newUrl, processing: false };
+                })
+             };
+          }));
+
+          // Safety delay between requests
+          await new Promise(r => setTimeout(r, 1000));
+
+        } catch (e) {
+           console.error(`Failed to process item ${task.itemId}`, e);
+           // Update status to failed (remove processing spinner)
+           setDocuments(prev => prev.map(doc => {
+             if (doc.id !== task.docId) return doc;
+             return {
+                ...doc,
+                items: doc.items.map(item => {
+                   if (item.id !== task.itemId) return item;
+                   return { ...item, processing: false };
+                })
+             };
+           }));
+        }
+      }
+      
+      if (successCount < tasks.length) {
         setToast({ visible: true, message: t.batchProcessError, type: 'error' });
+      } else {
+        setToast({ visible: true, message: "Processamento concluído!", type: 'success' });
       }
 
     } catch (e) {
-      console.error("Batch processing error", e);
-      // Reset processing state on catastrophic failure
-      setDocuments(prev => prev.map(doc => ({
-        ...doc,
-        items: doc.items.map(item => ({ ...item, processing: false }))
-      })));
+      console.error("Batch processing fatal error", e);
     } finally {
       setIsProcessing(false);
     }
