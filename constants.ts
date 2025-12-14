@@ -30,6 +30,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     cancel: "Cancelar",
     confirm: "Confirmar Edição",
     removeBg: "Remover Fundo",
+    removeBgBatch: "Remover Fundos (Sel.)",
     enhance: "Melhorar Nitidez",
     magicEraser: "Borracha Mágica",
     brushSize: "Tamanho do Pincel",
@@ -62,7 +63,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     backToGrid: "Voltar para Grade",
     viewPage: "Visualizar Página",
     nextPage: "Próxima",
-    prevPage: "Anterior"
+    prevPage: "Anterior",
+    batchProcessError: "Erro ao processar algumas imagens.",
+    rightsReserved: "Todos os direitos reservados",
+    supportLink: "Clique Aqui para obter suporte",
+    footerQuote: '"E não nos cansemos de fazer o bem, porque a seu tempo ceifaremos" — Gálatas 6:9'
   },
   'en': {
     selectAll: "Select All",
@@ -85,6 +90,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     cancel: "Cancel",
     confirm: "Confirm Edit",
     removeBg: "Remove Background",
+    removeBgBatch: "Remove Bg (Sel.)",
     enhance: "Enhance Sharpness",
     magicEraser: "Magic Eraser",
     brushSize: "Brush Size",
@@ -117,7 +123,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     backToGrid: "Back to Grid",
     viewPage: "View Page",
     nextPage: "Next",
-    prevPage: "Previous"
+    prevPage: "Previous",
+    batchProcessError: "Error processing some images.",
+    rightsReserved: "All rights reserved",
+    supportLink: "Click Here for support",
+    footerQuote: '"And let us not grow weary of doing good, for in due season we will reap" — Galatians 6:9'
   },
   'es': {
     selectAll: "Seleccionar todos",
@@ -140,6 +150,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     cancel: "Cancelar",
     confirm: "Confirmar Edición",
     removeBg: "Eliminar Fondo",
+    removeBgBatch: "Eliminar Fondo (Sel.)",
     enhance: "Mejorar Nitidez",
     magicEraser: "Borrador Mágico",
     brushSize: "Tamaño del Pincel",
@@ -172,7 +183,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     backToGrid: "Volver a la cuadrícula",
     viewPage: "Ver Página",
     nextPage: "Siguiente",
-    prevPage: "Anterior"
+    prevPage: "Anterior",
+    batchProcessError: "Error al procesar algunas imágenes.",
+    rightsReserved: "Todos los derechos reservados",
+    supportLink: "Haga clic aquí para obtener soporte",
+    footerQuote: '"No nos cansemos, pues, de hacer bien; porque a su tiempo segaremos" — Gálatas 6:9'
   },
   'el': {
     selectAll: "Επιλογή όλων",
@@ -195,6 +210,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     cancel: "Ακύρωση",
     confirm: "Επιβεβαίωση",
     removeBg: "Αφαίρεση φόντου",
+    removeBgBatch: "Αφαίρεση φόντου (Επιλ.)",
     enhance: "Βελτίωση ευκρίνειας",
     magicEraser: "Μαγική Γόμα",
     brushSize: "Μέγεθος Πινέλου",
@@ -227,7 +243,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     backToGrid: "Επιστροφή στο Πλέγμα",
     viewPage: "Προβολή Σελίδας",
     nextPage: "Επόμενη",
-    prevPage: "Προηγούμενη"
+    prevPage: "Προηγούμενη",
+    batchProcessError: "Σφάλμα επεξεργασίας ορισμένων εικόνων.",
+    rightsReserved: "Με επιφύλαξη παντός δικαιώματος",
+    supportLink: "Κάντε κλικ εδώ για υποστήριξη",
+    footerQuote: '"Αν δεν αποκάμνουμε, θα θερίσουμε στον κατάλληλο καιρό." — ΠΡΟΣ ΓΑΛΑΤΑΣ 6:9'
   },
   'he': {
     selectAll: "בחר הכל",
@@ -250,6 +270,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     cancel: "ביטול",
     confirm: "אשר עריכה",
     removeBg: "הסר רקע",
+    removeBgBatch: "הסר רקע (נבחרים)",
     enhance: "שפר חדות",
     magicEraser: "מחק קסם",
     brushSize: "גודל מברשת",
@@ -282,6 +303,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     backToGrid: "חזור לרשת",
     viewPage: "הצג עמוד",
     nextPage: "הבא",
-    prevPage: "הקודם"
+    prevPage: "הקודם",
+    batchProcessError: "שגיאה בעיבוד חלק מהתמונות.",
+    rightsReserved: "כל הזכויות שמורות",
+    supportLink: "לחץ כאן לתמיכה",
+    footerQuote: '"וְלֹא נִרְפֶּה מַעֲשׂוֹת הַטּוֹב כִּי בְעִתּוֹ נִקְצֹר" — אל הגלטים ו׳:ט׳'
   }
 };

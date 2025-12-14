@@ -223,6 +223,14 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
                {item.type === 'image' ? (
                  <>
                    <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                   
+                   {/* Processing Spinner Overlay */}
+                   {item.processing && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+                         <Loader2 className="animate-spin text-white" size={20} />
+                      </div>
+                   )}
+
                    <button 
                      className="absolute top-0 right-0 w-6 h-6 bg-white/90 dark:bg-gray-900/80 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors z-10 rounded-bl-lg"
                      onMouseEnter={() => setHoveredPreviewId(item.id)}

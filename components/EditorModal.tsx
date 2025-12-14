@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Wand2, Eraser, Check, Undo, RotateCcw, Redo, ZoomIn, ZoomOut, Search, Sparkles, Crop as CropIcon } from 'lucide-react';
+import { X, Wand2, Eraser, Check, Undo, RotateCcw, Redo, ZoomIn, ZoomOut, Search, Sparkles, Crop as CropIcon, Hand } from 'lucide-react';
 import { ImageItem, Language } from '../types';
 import { removeBackground, enhanceImage, magicEraser } from '../services/geminiService';
 import { TRANSLATIONS } from '../constants';
@@ -43,6 +43,12 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
   const [dragAction, setDragAction] = useState<'create' | 'move' | 'resize' | null>(null);
   const [activeHandle, setActiveHandle] = useState<ResizeHandle | null>(null);
   
+  // Panning State
+  const [isPanning, setIsPanning] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const panStartRef = useRef<Point>({ x: 0, y: 0 });
+  const scrollStartRef = useRef<{ left: number, top: number }>({ left: 0, top: 0 });
+
   // Refs for drag calculations (to avoid stale state in event listeners)
   const dragStartPosRef = useRef<Point>({ x: 0, y: 0 }); // Screen coordinates
   const cropStartRectRef = useRef<Rect | null>(null); // Natural coordinates
@@ -72,8 +78,31 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
       setZoom(1);
       setActiveTool('none');
       setCursorPos(null);
+      setIsPanning(false);
     }
   }, [item, isOpen]);
+
+  // Spacebar Listener for Panning Mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !e.repeat) {
+        setIsSpacePressed(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpacePressed(false);
+        if (isPanning) setIsPanning(false); // Stop panning if space released (optional UX choice)
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isPanning]);
 
   // Derived state
   const currentImage = history[currentIndex] || item.url;
@@ -149,6 +178,19 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
     if (isProcessing || !imageRef.current || !wrapperRef.current) return;
     
     e.preventDefault();
+
+    // 0. Check for Pan Condition (Spacebar OR No active tool)
+    if (isSpacePressed || activeTool === 'none') {
+        setIsPanning(true);
+        panStartRef.current = { x: e.clientX, y: e.clientY };
+        if (containerRef.current) {
+            scrollStartRef.current = {
+                left: containerRef.current.scrollLeft,
+                top: containerRef.current.scrollTop
+            };
+        }
+        return;
+    }
 
     const rect = wrapperRef.current.getBoundingClientRect();
     const scale = getClientToNaturalScale();
@@ -226,6 +268,17 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
   };
 
   const handleWindowMouseMove = useCallback((e: MouseEvent) => {
+    // Panning Logic
+    if (isPanning && containerRef.current) {
+        const deltaX = e.clientX - panStartRef.current.x;
+        const deltaY = e.clientY - panStartRef.current.y;
+        
+        // Move scroll opposite to drag direction (Standard Grab behavior)
+        containerRef.current.scrollLeft = scrollStartRef.current.left - deltaX;
+        containerRef.current.scrollTop = scrollStartRef.current.top - deltaY;
+        return;
+    }
+
     if (!isDragging || !imageRef.current || !cropStartRectRef.current || !wrapperRef.current) return;
 
     const scale = getClientToNaturalScale();
@@ -269,9 +322,13 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
         setCrop({ x, y, w, h });
     }
 
-  }, [isDragging, dragAction, activeHandle]);
+  }, [isDragging, dragAction, activeHandle, isPanning]);
 
   const handleWindowMouseUp = useCallback(() => {
+    if (isPanning) {
+        setIsPanning(false);
+    }
+    
     if (isDragging) {
         setIsDragging(false);
         setDragAction(null);
@@ -285,11 +342,11 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
         });
     }
     setIsDrawing(false);
-  }, [isDragging]);
+  }, [isDragging, isPanning]);
 
   // Attach/Detach global listeners
   useEffect(() => {
-    if (isDragging || isDrawing) {
+    if (isDragging || isDrawing || isPanning) {
         window.addEventListener('mousemove', handleWindowMouseMove);
         window.addEventListener('mouseup', handleWindowMouseUp);
     }
@@ -297,12 +354,12 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
         window.removeEventListener('mousemove', handleWindowMouseMove);
         window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, [isDragging, isDrawing, handleWindowMouseMove, handleWindowMouseUp]);
+  }, [isDragging, isDrawing, isPanning, handleWindowMouseMove, handleWindowMouseUp]);
 
 
   const handleMouseMoveLocal = (e: React.MouseEvent) => {
     // Only used for eraser cursor update or non-dragging logic
-    if (activeTool === 'eraser') {
+    if (activeTool === 'eraser' && !isSpacePressed) {
       setCursorPos({ x: e.clientX, y: e.clientY });
       
       if (isDrawing && imageRef.current && wrapperRef.current) {
@@ -441,7 +498,36 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
   };
 
   const handleSave = () => {
-    onUpdate({ ...item, url: currentImage });
+    let finalUrl = currentImage;
+
+    // Auto-apply pending crop if exists and active
+    if (activeTool === 'crop' && crop && imageRef.current) {
+      const norm = normalizeRect(crop);
+      // Minimum valid size check (same as mouseUp)
+      if (norm.w > 5 && norm.h > 5) {
+        const canvas = document.createElement('canvas');
+        canvas.width = norm.w;
+        canvas.height = norm.h;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          ctx.drawImage(
+            imageRef.current,
+            norm.x,
+            norm.y,
+            norm.w,
+            norm.h,
+            0,
+            0,
+            norm.w,
+            norm.h
+          );
+          finalUrl = canvas.toDataURL();
+        }
+      }
+    }
+
+    onUpdate({ ...item, url: finalUrl });
     onClose();
   };
 
@@ -461,6 +547,15 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
     if (dist(mx, my, r.x + r.w, r.y + r.h/2) < tol) return 'e';
 
     return null;
+  };
+
+  // Determine cursor based on state
+  const getCursor = () => {
+      if (isPanning) return 'cursor-grabbing';
+      if (isSpacePressed || activeTool === 'none') return 'cursor-grab';
+      if (activeTool === 'eraser') return 'cursor-none';
+      if (activeTool === 'crop') return 'cursor-crosshair';
+      return 'cursor-default';
   };
 
   return (
@@ -579,7 +674,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
                 <div 
                   ref={wrapperRef}
                   className={`relative inline-block border border-gray-300 dark:border-gray-700 shadow-xl 
-                    ${activeTool === 'eraser' ? 'cursor-none' : activeTool === 'crop' ? 'cursor-crosshair' : 'cursor-default'}
+                    ${getCursor()}
                     bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0iI2YwZjBmMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZThlOGU4IiAvPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZThlOGU4IiAvPjwvc3ZnPg==')] dark:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0iIzIyMjIyMiI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjMzMzMzMzIiAvPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjMzMzMzMzIiAvPjwvc3ZnPg==')]`}
                   onMouseDown={handleMouseDown}
                   style={{
@@ -614,7 +709,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
                     }}
                   />
                   
-                  {activeTool === 'eraser' && cursorPos && (
+                  {activeTool === 'eraser' && cursorPos && !isPanning && (
                     <div 
                        className="fixed pointer-events-none z-50 rounded-full border border-white shadow-sm bg-purple-500/30"
                        style={{

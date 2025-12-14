@@ -8,7 +8,7 @@ import Toast from './components/Toast';
 import { DocumentGroup, AppSettings, ImageItem, Language, Theme } from './types';
 import { INITIAL_SETTINGS, TRANSLATIONS } from './constants';
 import { generatePDF } from './services/pdfService';
-import { identifyPageNumber } from './services/geminiService';
+import { identifyPageNumber, removeBackground } from './services/geminiService';
 
 const App = () => {
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
@@ -17,6 +17,7 @@ const App = () => {
   ]);
   const [editingItem, setEditingItem] = useState<{ docId: string, item: ImageItem } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // State for batch AI operations
   const [language, setLanguage] = useState<Language>('pt-BR');
   
   // Theme State with Persistence
@@ -244,6 +245,83 @@ const App = () => {
     }
   };
 
+  const handleBatchRemoveBg = async () => {
+    const docsToProcess = documents.filter(doc => doc.selected);
+    
+    if (docsToProcess.length === 0) {
+       alert(language === 'en' ? "Select columns to process." : "Selecione as colunas para processar.");
+       return;
+    }
+
+    // 1. Mark Items as Processing
+    setDocuments(prev => prev.map(doc => {
+      if (!doc.selected) return doc;
+      return {
+        ...doc,
+        items: doc.items.map(item => item.type === 'image' ? { ...item, processing: true } : item)
+      };
+    }));
+
+    setIsProcessing(true);
+
+    // 2. Collect all tasks
+    const tasks: { docId: string, itemId: string, url: string }[] = [];
+    docsToProcess.forEach(doc => {
+      doc.items.forEach(item => {
+        if (item.type === 'image') {
+          tasks.push({ docId: doc.id, itemId: item.id, url: item.url });
+        }
+      });
+    });
+
+    try {
+      // 3. Process in parallel (mapped to promises)
+      // Note: In a production app, we might want to limit concurrency (p-limit) to avoid API rate limits.
+      // For this demo, we assume the user processes a reasonable amount or the API handles it.
+      const results = await Promise.allSettled(tasks.map(async (task) => {
+         const newUrl = await removeBackground(task.url);
+         return { ...task, newUrl };
+      }));
+
+      // 4. Update State with Results
+      setDocuments(prev => prev.map(doc => {
+         if (!doc.selected) return doc;
+         
+         const newItems = doc.items.map(item => {
+            if (item.type !== 'image') return item;
+            
+            // Find result for this item
+            const result = results.find(r => r.status === 'fulfilled' && r.value.itemId === item.id);
+            
+            if (result && result.status === 'fulfilled') {
+               return { ...item, url: result.value.newUrl, processing: false };
+            } else {
+               // If failed, keep original but stop processing spinner
+               return { ...item, processing: false };
+            }
+         });
+
+         return { ...doc, items: newItems };
+      }));
+      
+      // Check for any failures
+      const hasErrors = results.some(r => r.status === 'rejected');
+      if (hasErrors) {
+        setToast({ visible: true, message: t.batchProcessError, type: 'error' });
+      }
+
+    } catch (e) {
+      console.error("Batch processing error", e);
+      // Reset processing state on catastrophic failure
+      setDocuments(prev => prev.map(doc => ({
+        ...doc,
+        items: doc.items.map(item => ({ ...item, processing: false }))
+      })));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleSave = async () => {
     const docsToSave = documents.filter(doc => doc.selected);
 
@@ -292,7 +370,9 @@ const App = () => {
           updateSetting={handleUpdateSetting} 
           onSave={handleSave}
           onClearAll={handleClearAll}
+          onRemoveBgBatch={handleBatchRemoveBg}
           isSaving={isSaving}
+          isProcessing={isProcessing}
           allSelected={allSelected}
           onToggleSelectAll={handleToggleSelectAll}
           language={language}
@@ -342,9 +422,8 @@ const App = () => {
 
           {/* Footer - Outside the dashed frame, bottom of screen area */}
           <footer className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400 space-y-1 pb-1">
-             <p>Αρχή - "E não nos cansemos de fazer o bem, porque a seu tempo ceifaremos" — Gálatas 6:9.</p>
-             <p>Αν δεν αποκάμνουμε, θα θερίσουμε στον κατάλληλο καιρό. — ΠΡΟΣ ΓΑΛΑΤΑΣ 6:9β.</p>
-             <p>Αρχή PDF©{new Date().getFullYear()} - Todos os direitos reservados. | Suporte - <a title="Help" href="ti@advocaciabichara.com.br">Clique Aqui</a></p>
+             <p>Αρχή - {t.footerQuote}</p>
+             <p>Αρχή PDF©{new Date().getFullYear()} - {t.rightsReserved}. | <a title="Help" href="mailto:ti@advocaciabichara.com.br">{t.supportLink}</a></p>
           </footer>
         </main>
 

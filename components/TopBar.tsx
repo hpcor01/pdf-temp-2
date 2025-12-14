@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, ChevronDown, Trash } from 'lucide-react';
+import { Globe, Moon, Sun, ChevronDown, Trash, Eraser } from 'lucide-react';
 import { AppSettings, Language, Theme } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -8,7 +8,9 @@ interface TopBarProps {
   updateSetting: (key: keyof AppSettings, value: boolean) => void;
   onSave: () => void;
   onClearAll: () => void;
+  onRemoveBgBatch: () => void;
   isSaving: boolean;
+  isProcessing: boolean;
   allSelected: boolean;
   onToggleSelectAll: (selected: boolean) => void;
   language: Language;
@@ -30,7 +32,9 @@ const TopBar: React.FC<TopBarProps> = ({
   updateSetting, 
   onSave, 
   onClearAll,
+  onRemoveBgBatch,
   isSaving,
+  isProcessing,
   allSelected,
   onToggleSelectAll,
   language,
@@ -102,6 +106,19 @@ const TopBar: React.FC<TopBarProps> = ({
 
         <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2"></div>
 
+        {/* Bulk AI Action */}
+        <button 
+          onClick={onRemoveBgBatch}
+          disabled={isProcessing || isSaving}
+          className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition disabled:opacity-50"
+          title={t.removeBgBatch}
+        >
+          <Eraser size={16} />
+          <span className="text-sm font-medium">{t.removeBgBatch}</span>
+        </button>
+
+        <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2"></div>
+
         <label className="flex items-center space-x-2 cursor-pointer text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">
            <input 
              type="checkbox" 
@@ -134,7 +151,7 @@ const TopBar: React.FC<TopBarProps> = ({
 
         <button 
           onClick={onSave}
-          disabled={isSaving}
+          disabled={isSaving || isProcessing}
           className="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-6 py-2 rounded-xl text-sm font-medium transition shadow-lg shadow-emerald-500/20 dark:shadow-emerald-900/20 disabled:opacity-50 flex items-center"
         >
           {isSaving ? t.saving : t.save}
