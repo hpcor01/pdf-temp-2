@@ -3,6 +3,7 @@ import { X, Wand2, Eraser, Check, Undo, RotateCcw, Redo, ZoomIn, ZoomOut, Search
 import { ImageItem, Language } from '../types';
 import { removeBackground } from '../services/rmbgService';
 import { TRANSLATIONS } from '../constants';
+import { enhanceImage, magicEraser, identifyPageNumber } from '../services/imageTools';
 
 interface EditorModalProps {
   item: ImageItem;
@@ -422,7 +423,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
       if (action === 'bg') {
         newUrl = await removeBackground(currentImage);
       } else {
-        newUrl = await enhanceImage(currentImage);
+        //newUrl = await enhanceImage(currentImage);
       }
       pushToHistory(newUrl);
     } catch (e) {
@@ -459,7 +460,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
           ctx.stroke();
         });
         const compositeUrl = canvas.toDataURL('image/png');
-        const resultUrl = await magicEraser(compositeUrl);
+        //const resultUrl = await magicEraser(compositeUrl);
         pushToHistory(resultUrl);
         setActiveTool('none');
       }
@@ -611,7 +612,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
               </button>
 
               {/* Eraser */}
-              <div className={`border rounded-lg p-3 transition ${activeTool === 'eraser' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}`}>
+            /*<div className={`border rounded-lg p-3 transition ${activeTool === 'eraser' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}`}>
                 <button 
                   onClick={() => setActiveTool(activeTool === 'eraser' ? 'none' : 'eraser')}
                   className="w-full flex items-center text-left mb-2 text-gray-700 dark:text-gray-200"
@@ -626,7 +627,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
                     <button onClick={handleApplyEraser} disabled={maskLines.length === 0 || isProcessing} className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium disabled:opacity-50 transition">{t.applyEraser}</button>
                   </div>
                 )}
-              </div>
+              </div>*/
 
               <div className="border-t border-gray-200 dark:border-gray-700 my-4" />
               

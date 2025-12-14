@@ -1,5 +1,19 @@
 const API_URL = import.meta.env.VITE_RMBG_API_URL;
 
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeout = 30000
+) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  return fetch(url, {
+    ...options,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(id));
+}
+
 export async function removeBackground(imageBase64: string): Promise<string> {
   if (!API_URL) {
     throw new Error('VITE_RMBG_API_URL not defined');

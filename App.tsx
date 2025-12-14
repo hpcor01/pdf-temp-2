@@ -8,7 +8,7 @@ import Toast from './components/Toast';
 import { DocumentGroup, AppSettings, ImageItem, Language, Theme } from './types';
 import { INITIAL_SETTINGS, TRANSLATIONS } from './constants';
 import { generatePDF } from './services/pdfService';
-
+import { enhanceImage, magicEraser, identifyPageNumber } from './services/imageTools';
 
 const App = () => {
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
@@ -207,7 +207,7 @@ const App = () => {
       const itemsToProcess = doc.items.filter(i => i.type === 'image');
       const itemsToSkip = doc.items.filter(i => i.type !== 'image');
 
-      // Sequential Processing to avoid Rate Limits
+      /* Sequential Processing to avoid Rate Limits
       for (const item of itemsToProcess) {
         try {
           // Identify page number
@@ -220,7 +220,7 @@ const App = () => {
           console.error(`Error sorting item ${item.id}`, e);
           results.push({ item, pageNum: -1 });
         }
-      }
+      } */
 
       // Add back non-image items
       itemsToSkip.forEach(item => results.push({ item, pageNum: -1 }));
