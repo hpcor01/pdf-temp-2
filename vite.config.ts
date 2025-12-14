@@ -9,10 +9,7 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
-    define: {
-      // Defines process.env.API_KEY globally so existing service code works without changes
-      'process.env.API_KEY': JSON.stringify(env.)
-    },
+    
     build: {
       outDir: 'dist',
       sourcemap: false
