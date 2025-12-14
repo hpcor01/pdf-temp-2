@@ -438,7 +438,7 @@ const App = () => {
           {/* Footer - Outside the dashed frame, bottom of screen area */}
           <footer className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400 space-y-1 pb-1">
              <p>Αρχή - {t.footerQuote}</p>
-             <p>Αρχή PDF©{new Date().getFullYear()} - {t.rightsReserved}. | <a title="Help" href="mailto:ti@advocaciabichara.com.br">{t.supportLink}</a></p>
+             <p>Αρχή PDF© {new Date().getFullYear()} - {t.rightsReserved}. | <a title="Help" href="mailto:ti@advocaciabichara.com.br">{t.supportLink}</a></p>
           </footer>
         </main>
 
