@@ -1,96 +1,110 @@
-import express from "express";
-import multer from "multer";
-import cors from "cors";
-import sharp from "sharp";
-import * as ort from "onnxruntime-node";
+import express from 'express';
+import cors from 'cors';
+import * as ort from 'onnxruntime-node';
+import sharp from 'sharp';
+import path from 'path';
 
 const app = express();
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
-
 app.use(cors());
+app.use(express.json({ limit: '15mb' }));
 
 let session: ort.InferenceSession;
 
-/* ===========================
-   Carregar modelo UMA vez
-=========================== */
+// ===== Load model once =====
 async function loadModel() {
-  console.log("Carregando modelo RMBG...");
-  session = await ort.InferenceSession.create(
-    "./rmbg/rmbg-2.0.onnx",
-    { executionProviders: ["cpu"] }
-  );
-  console.log("Modelo RMBG carregado");
+  const modelPath = path.join(process.cwd(), 'rmbg', 'rmbg.onnx');
+  console.log('Loading RMBG model:', modelPath);
+
+  session = await ort.InferenceSession.create(modelPath, {
+    executionProviders: ['cpu'],
+    graphOptimizationLevel: 'all',
+  });
+
+  console.log('RMBG model loaded');
 }
 
-await loadModel();
-
-/* ===========================
-   Health check
-=========================== */
-app.get("/health", (_, res) => {
-  res.send("ok");
+loadModel().catch(err => {
+  console.error('Failed to load RMBG model', err);
+  process.exit(1);
 });
 
-/* ===========================
-   Remoção de fundo
-=========================== */
-app.post("/remove-bg", upload.single("image"), async (req, res) => {
+// ===== Health =====
+app.get('/health', (_, res) => {
+  res.json({ status: 'ok' });
+});
+
+// ===== Remove BG =====
+app.post('/remove-bg', async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).send("Imagem não enviada");
+    if (!session) {
+      return res.status(503).json({ error: 'Model not ready' });
     }
 
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: 'Image missing' });
+    }
+
+    const base64 = image.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64, 'base64');
+
+    // Resize to keep RAM low
     const MAX_SIZE = 1024;
+    const img = sharp(buffer);
+    const meta = await img.metadata();
 
-    const { data, info } = await sharp(req.file.buffer)
-      .resize(MAX_SIZE, MAX_SIZE, { fit: "contain" })
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-
-    const floatData = new Float32Array(data.length);
-    for (let i = 0; i < data.length; i++) {
-      floatData[i] = data[i] / 255;
-    }
-
-    const inputTensor = new ort.Tensor(
-      "float32",
-      floatData,
-      [1, info.height, info.width, 3]
+    const scale = Math.min(
+      MAX_SIZE / (meta.width || MAX_SIZE),
+      MAX_SIZE / (meta.height || MAX_SIZE),
+      1
     );
 
-    const output = await session.run({ input: inputTensor });
-    const mask = output.output.data as Float32Array;
+    const width = Math.round((meta.width || MAX_SIZE) * scale);
+    const height = Math.round((meta.height || MAX_SIZE) * scale);
 
-    const alpha = Buffer.alloc(mask.length);
-    for (let i = 0; i < mask.length; i++) {
-      alpha[i] = Math.round(mask[i] * 255);
+    const resized = await img
+      .resize(width, height)
+      .removeAlpha()
+      .raw()
+      .toBuffer();
+
+    // Normalize [0,1]
+    const input = new Float32Array(width * height * 3);
+    for (let i = 0; i < resized.length; i++) {
+      input[i] = resized[i] / 255;
     }
 
-    const result = await sharp(data, {
-      raw: {
-        width: info.width,
-        height: info.height,
-        channels: 3
-      }
+    const tensor = new ort.Tensor('float32', input, [1, 3, height, width]);
+    const feeds = { input: tensor };
+
+    const results = await session.run(feeds);
+    const output = results[Object.keys(results)[0]];
+
+    // Output mask
+    const mask = Buffer.alloc(width * height);
+    for (let i = 0; i < mask.length; i++) {
+      mask[i] = Math.round(output.data[i] * 255);
+    }
+
+    // Apply alpha mask
+    const png = await sharp(resized, {
+      raw: { width, height, channels: 3 },
     })
-      .joinChannel(alpha)
+      .joinChannel(mask)
       .png()
       .toBuffer();
 
-    res.set("Content-Type", "image/png");
-    res.send(result);
+    res.json({
+      image: `data:image/png;base64,${png.toString('base64')}`,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Erro ao remover fundo");
+    res.status(500).json({ error: 'RMBG failed' });
   }
 });
 
-/* ===========================
-   Start server (Render-safe)
-=========================== */
-const port = process.env.PORT || 3000;
-app.listen(port, "0.0.0.0", () => {
-  console.log(`RMBG backend rodando na porta ${port}`);
+// ===== Start =====
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`RMBG backend running on ${PORT}`);
 });

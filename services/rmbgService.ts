@@ -1,25 +1,22 @@
-const RMBG_API_URL = import.meta.env.VITE_RMBG_API_URL;
+const API_URL = import.meta.env.VITE_RMBG_API_URL;
 
-if (!RMBG_API_URL) {
-  console.warn("VITE_RMBG_API_URL não configurada");
-}
-
-/**
- * Remove o fundo da imagem usando o backend RMBG (Render)
- */
-export async function removeBackground(file: File): Promise<Blob> {
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const response = await fetch(`${RMBG_API_URL}/remove-bg`, {
-    method: "POST",
-    body: formData
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erro RMBG: ${text}`);
+export async function removeBackground(imageBase64: string): Promise<string> {
+  if (!API_URL) {
+    throw new Error('VITE_RMBG_API_URL not defined');
   }
 
-  return await response.blob();
+  const res = await fetch(`${API_URL}/remove-bg`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ image: imageBase64 }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`RMBG failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.image;
 }
