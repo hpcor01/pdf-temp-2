@@ -22,19 +22,32 @@ export const urlToBase64 = async (url: string): Promise<string> => {
   });
 };
 
-// Retry wrapper to handle Rate Limits (429)
-async function callWithRetry<T>(operation: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
+// Retry wrapper to handle Rate Limits (429) - Configured for strict quotas
+async function callWithRetry<T>(operation: () => Promise<T>, retries = 5, delay = 5000): Promise<T> {
   try {
     return await operation();
   } catch (error: any) {
-    // Check for 429 (Too Many Requests) or 503 (Service Unavailable)
-    const isRateLimit = error.status === 429 || error.message?.includes('429') || error.message?.includes('limit');
-    const isServerOverload = error.status === 503;
+    const errString = JSON.stringify(error, Object.getOwnPropertyNames(error)).toLowerCase();
+    
+    // Check for 429 (Too Many Requests), 503 (Service Unavailable), or quota messages
+    const isRateLimit = 
+      error.status === 429 || 
+      error.code === 429 ||
+      errString.includes('429') || 
+      errString.includes('quota') || 
+      errString.includes('resource exhausted') ||
+      errString.includes('too many requests');
+
+    const isServerOverload = error.status === 503 || errString.includes('503');
 
     if (retries > 0 && (isRateLimit || isServerOverload)) {
-      console.warn(`Rate limit hit, retrying in ${delay}ms... (${retries} retries left)`);
+      console.warn(`Rate limit hit (429/Quota). Retrying in ${delay/1000}s... (${retries} retries left)`);
+      
+      // Wait for the delay
       await new Promise(resolve => setTimeout(resolve, delay));
-      return callWithRetry(operation, retries - 1, delay * 2); // Exponential backoff
+      
+      // Exponential backoff with a higher multiplier (2.5x) to clear minute-based quotas
+      return callWithRetry(operation, retries - 1, delay * 2.5); 
     }
     throw error;
   }

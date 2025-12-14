@@ -214,8 +214,8 @@ const App = () => {
           const pageNum = await identifyPageNumber(item.url);
           results.push({ item, pageNum });
           
-          // Small delay between requests to be nice to the API
-          await new Promise(r => setTimeout(r, 500));
+          // Safer delay between requests
+          await new Promise(r => setTimeout(r, 2500));
         } catch (e) {
           console.error(`Error sorting item ${item.id}`, e);
           results.push({ item, pageNum: -1 });
@@ -305,8 +305,8 @@ const App = () => {
              };
           }));
 
-          // Safety delay between requests
-          await new Promise(r => setTimeout(r, 1000));
+          // Safer delay between requests
+          await new Promise(r => setTimeout(r, 2500));
 
         } catch (e) {
            console.error(`Failed to process item ${task.itemId}`, e);
