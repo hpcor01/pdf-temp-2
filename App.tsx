@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import TopBar from './components/TopBar';
 import DocumentColumn from './components/DocumentColumn';
@@ -8,7 +8,7 @@ import Toast from './components/Toast';
 import { DocumentGroup, AppSettings, ImageItem, Language, Theme } from './types';
 import { INITIAL_SETTINGS, TRANSLATIONS } from './constants';
 import { generatePDF } from './services/pdfService';
-import { enhanceImage, magicEraser, identifyPageNumber } from './services/imageTools';
+import { removeBackground } from './services/imageTools';
 
 const App = () => {
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);

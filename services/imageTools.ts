@@ -1,3 +1,9 @@
+import { removeBackground as rmbg } from './rmbgService';
+
+export async function removeBackground(img: string) {
+  return rmbg(img);
+}
+
 export async function enhanceImage(img: string) {
   return img;
 }

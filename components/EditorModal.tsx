@@ -3,7 +3,6 @@ import { X, Wand2, Eraser, Check, Undo, RotateCcw, Redo, ZoomIn, ZoomOut, Search
 import { ImageItem, Language } from '../types';
 import { removeBackground } from '../services/rmbgService';
 import { TRANSLATIONS } from '../constants';
-import { enhanceImage, magicEraser, identifyPageNumber } from '../services/imageTools';
 
 interface EditorModalProps {
   item: ImageItem;
