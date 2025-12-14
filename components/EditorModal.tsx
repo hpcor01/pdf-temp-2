@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Wand2, Eraser, Check, Undo, RotateCcw, Redo, ZoomIn, ZoomOut, Search, Sparkles, Crop as CropIcon, Hand } from 'lucide-react';
 import { ImageItem, Language } from '../types';
-import { removeBackground, enhanceImage, magicEraser } from '../services/geminiService';
+import { removeBackground } from '../services/rmbgService';
 import { TRANSLATIONS } from '../constants';
 
 interface EditorModalProps {
