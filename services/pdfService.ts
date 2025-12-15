@@ -37,7 +37,8 @@ const convertImageToPngBytes = async (url: string): Promise<Uint8Array> => {
 };
 
 const downloadBlob = (data: Uint8Array, filename: string, mimeType: string) => {
-  const blob = new Blob([data], { type: mimeType });
+  // Cast data to any to avoid TypeScript error: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  const blob = new Blob([data as any], { type: mimeType });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
