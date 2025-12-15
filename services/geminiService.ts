@@ -45,8 +45,9 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
              // if (current === total) console.log(`Downloaded ${key}`);
         },
         debug: true, 
-        // Using unpkg as it mirrors the npm package structure faithfully, preventing metadata not found errors.
-        publicPath: 'https://unpkg.com/@imgly/background-removal-data@1.7.0/dist/'
+        // Use the local proxy path defined in vite.config.ts (dev) and vercel.json (prod).
+        // This makes the browser treat the request as same-origin, bypassing CORS/Tracking Prevention.
+        publicPath: `${window.location.origin}/imgly-proxy/`
     };
 
     // Run the removal

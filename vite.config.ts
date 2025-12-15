@@ -9,9 +9,13 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: './', // Ensure relative paths for assets
     server: {
-      headers: {
-        "Cross-Origin-Opener-Policy": "same-origin",
-        "Cross-Origin-Embedder-Policy": "require-corp",
+      proxy: {
+        // Local proxy to bypass CORS during development
+        '/imgly-proxy': {
+          target: 'https://unpkg.com/@imgly/background-removal-data@1.7.0/dist',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/imgly-proxy/, ''),
+        },
       },
     },
     build: {
