@@ -38,20 +38,28 @@ export const applyImageAdjustments = async (imageUrl: string, brightness: number
  */
 export const removeBackground = async (imageUrl: string): Promise<string> => {
   try {
+    // 1. Fetch the image data first to ensure we have a valid Blob.
+    // This bypasses potential fetch errors inside the library regarding the source image,
+    // ensuring the library only has to handle the computation.
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+        throw new Error(`Failed to fetch source image: ${imageResponse.statusText}`);
+    }
+    const imageBlob = await imageResponse.blob();
+
     // Configuration for imgly
     const config: Config = {
         progress: (key, current, total) => {
              // Optional: meaningful logs only
-             // if (current === total) console.log(`Downloaded ${key}`);
         },
         debug: true, 
-        // Use the local proxy path defined in vite.config.ts (dev) and vercel.json (prod).
-        // This makes the browser treat the request as same-origin, bypassing CORS/Tracking Prevention.
-        publicPath: `${window.location.origin}/imgly-proxy/`
+        // Direct absolute path to the official CDN.
+        // Using the official CDN is usually the most stable option provided strict CORS headers are disabled.
+        publicPath: 'https://static.img.ly/npm/@imgly/background-removal-data/1.7.0/dist/'
     };
 
-    // Run the removal
-    const blob = await removeBackgroundImgly(imageUrl, config);
+    // Run the removal passing the Blob directly
+    const resultBlob = await removeBackgroundImgly(imageBlob, config);
 
     // Convert Blob to Base64 Data URL for compatibility with the rest of the app
     return new Promise((resolve, reject) => {
@@ -64,7 +72,7 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
             }
         };
         reader.onerror = () => reject(new Error("FileReader failed"));
-        reader.readAsDataURL(blob);
+        reader.readAsDataURL(resultBlob);
     });
 
   } catch (error) {
@@ -73,6 +81,6 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
        console.error(error.message);
     }
     // Specific user-friendly error message
-    throw new Error("Falha ao remover fundo. Erro ao baixar recursos da IA. Verifique sua conexão.");
+    throw new Error("Falha ao remover fundo. Verifique sua conexão ou tente outra imagem.");
   }
 };

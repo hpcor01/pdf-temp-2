@@ -9,14 +9,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: './', // Ensure relative paths for assets
     server: {
-      proxy: {
-        // Local proxy to bypass CORS during development
-        '/imgly-proxy': {
-          target: 'https://static.img.ly/npm/@imgly/background-removal-data/1.7.0/dist',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/imgly-proxy/, ''),
-        },
-      },
+      // Proxy removed; fetching directly from CDN
     },
     build: {
       outDir: 'dist',

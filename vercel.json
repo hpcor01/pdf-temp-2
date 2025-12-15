@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/imgly-proxy/:match*",
-      "destination": "https://static.img.ly/npm/@imgly/background-removal-data/1.7.0/dist/:match*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
