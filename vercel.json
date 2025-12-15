@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/imgly-proxy/:match*",
-      "destination": "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.7.0/dist/:match*"
+      "destination": "https://static.img.ly/npm/@imgly/background-removal-data/1.7.0/dist/:match*"
     },
     {
       "source": "/(.*)",

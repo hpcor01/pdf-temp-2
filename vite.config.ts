@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Local proxy to bypass CORS during development
         '/imgly-proxy': {
-          target: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.7.0/dist',
+          target: 'https://static.img.ly/npm/@imgly/background-removal-data/1.7.0/dist',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/imgly-proxy/, ''),
         },
