@@ -41,11 +41,18 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
     // 1. Fetch the image data first to ensure we have a valid Blob.
     // This bypasses potential fetch errors inside the library regarding the source image,
     // ensuring the library only has to handle the computation.
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-        throw new Error(`Failed to fetch source image: ${imageResponse.statusText}`);
+    let imageBlob: Blob;
+    
+    try {
+        const imageResponse = await fetch(imageUrl);
+        if (!imageResponse.ok) {
+            throw new Error(`Failed to fetch source image: ${imageResponse.statusText}`);
+        }
+        imageBlob = await imageResponse.blob();
+    } catch (fetchError) {
+        console.error("Error pre-fetching image:", fetchError);
+        throw new Error("Could not process image source.");
     }
-    const imageBlob = await imageResponse.blob();
 
     // Configuration for imgly
     const config: Config = {
@@ -53,9 +60,8 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
              // Optional: meaningful logs only
         },
         debug: true, 
-        // Direct absolute path to the official CDN.
-        // Using the official CDN is usually the most stable option provided strict CORS headers are disabled.
-        publicPath: 'https://static.img.ly/npm/@imgly/background-removal-data/1.7.0/dist/'
+        // Use unpkg as it is often more reliable and has better CORS support than static.img.ly
+        publicPath: 'https://unpkg.com/@imgly/background-removal-data@1.7.0/dist/'
     };
 
     // Run the removal passing the Blob directly
@@ -81,6 +87,6 @@ export const removeBackground = async (imageUrl: string): Promise<string> => {
        console.error(error.message);
     }
     // Specific user-friendly error message
-    throw new Error("Falha ao remover fundo. Verifique sua conexão ou tente outra imagem.");
+    throw new Error("Falha ao remover fundo. Verifique a conexão com a internet (IA Models).");
   }
 };
