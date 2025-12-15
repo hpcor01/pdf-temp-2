@@ -27,10 +27,3 @@ dist-ssr
 # Environment variables
 .env
 .env.*
-.env.local
-.env.development.
-.env.test.local
-.env.production.
-
-# Miscellaneous
-.cache

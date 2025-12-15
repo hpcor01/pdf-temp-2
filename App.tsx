@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import TopBar from './components/TopBar';
 import DocumentColumn from './components/DocumentColumn';
@@ -8,7 +8,7 @@ import Toast from './components/Toast';
 import { DocumentGroup, AppSettings, ImageItem, Language, Theme } from './types';
 import { INITIAL_SETTINGS, TRANSLATIONS } from './constants';
 import { generatePDF } from './services/pdfService';
-import { removeBackground } from './services/imageTools';
+import { removeBackground } from './services/geminiService';
 
 const App = () => {
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
@@ -195,66 +195,6 @@ const App = () => {
     });
   };
 
-  const handleAutoSort = async (docId: string) => {
-    const doc = documents.find(d => d.id === docId);
-    if (!doc || doc.items.length < 2) return;
-
-    // Set loading state for column
-    setDocuments(prev => prev.map(d => d.id === docId ? { ...d, isSorting: true } : d));
-
-    try {
-      const results: { item: ImageItem; pageNum: number }[] = [];
-      const itemsToProcess = doc.items.filter(i => i.type === 'image');
-      const itemsToSkip = doc.items.filter(i => i.type !== 'image');
-
-      /* Sequential Processing to avoid Rate Limits
-      for (const item of itemsToProcess) {
-        try {
-          // Identify page number
-          const pageNum = await identifyPageNumber(item.url);
-          results.push({ item, pageNum });
-          
-          // Safer delay between requests
-          await new Promise(r => setTimeout(r, 2500));
-        } catch (e) {
-          console.error(`Error sorting item ${item.id}`, e);
-          results.push({ item, pageNum: -1 });
-        }
-      } */
-
-      // Add back non-image items
-      itemsToSkip.forEach(item => results.push({ item, pageNum: -1 }));
-
-      // Sort logic: 
-      results.sort((a, b) => {
-        if (a.pageNum !== -1 && b.pageNum !== -1) return a.pageNum - b.pageNum;
-        if (a.pageNum !== -1) return -1;
-        if (b.pageNum !== -1) return 1;
-        return 0;
-      });
-
-      const sortedItems = results.map(r => r.item);
-
-      // Check if we actually found numbers
-      const foundAny = results.some(r => r.pageNum !== -1);
-      
-      setDocuments(prev => prev.map(d => 
-        d.id === docId ? { ...d, items: sortedItems, isSorting: false } : d
-      ));
-
-      if (foundAny) {
-        setToast({ visible: true, message: t.sortSuccess, type: 'success' });
-      } else {
-        setToast({ visible: true, message: t.sortError, type: 'error' });
-      }
-
-    } catch (e) {
-      console.error(e);
-      setDocuments(prev => prev.map(d => d.id === docId ? { ...d, isSorting: false } : d));
-      setToast({ visible: true, message: t.docSaveError, type: 'error' });
-    }
-  };
-
   const handleBatchRemoveBg = async () => {
     const docsToProcess = documents.filter(doc => doc.selected);
     
@@ -285,7 +225,7 @@ const App = () => {
     }));
 
     try {
-      // Process Sequentially (One by One) to avoid Rate Limit
+      // Process Sequentially (One by One) to avoid heavy load with Imgly in browser
       let successCount = 0;
       
       for (const task of tasks) {
@@ -304,9 +244,6 @@ const App = () => {
                 })
              };
           }));
-
-          // Safer delay between requests
-          await new Promise(r => setTimeout(r, 2500));
 
         } catch (e) {
            console.error(`Failed to process item ${task.itemId}`, e);
@@ -414,7 +351,6 @@ const App = () => {
                     onDeleteDoc={handleDeleteDocument}
                     onToggleSelection={handleToggleColumnSelection}
                     onRotateItem={handleRotateItem}
-                    onAutoSort={handleAutoSort}
                     onMoveItem={handleMoveItem}
                     language={language}
                   />

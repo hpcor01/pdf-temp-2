@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, FileText, Plus, Search, RotateCw, ListOrdered, Loader2 } from 'lucide-react';
+import { Trash2, FileText, Plus, Search, RotateCw } from 'lucide-react';
 import { DocumentGroup, ImageItem, AppSettings, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -13,7 +13,6 @@ interface DocumentColumnProps {
   onDeleteDoc: (docId: string) => void;
   onToggleSelection: (docId: string, selected: boolean) => void;
   onRotateItem?: (docId: string, itemId: string) => void;
-  onAutoSort?: (docId: string) => void;
   onMoveItem?: (sourceDocId: string, itemId: string, targetDocId: string, targetIndex: number | null) => void;
   language: Language;
 }
@@ -28,7 +27,6 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
   onDeleteDoc,
   onToggleSelection,
   onRotateItem,
-  onAutoSort,
   onMoveItem,
   language
 }) => {
@@ -170,21 +168,6 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
         </div>
         
         <div className="flex space-x-1 items-center">
-           {/* Auto Sort Button */}
-           {onAutoSort && document.items.length > 1 && (
-             <button
-               onClick={() => onAutoSort(document.id)}
-               disabled={document.isSorting}
-               className={`p-1.5 rounded-md transition relative group/sort
-                 ${document.isSorting 
-                   ? 'text-emerald-500 cursor-wait' 
-                   : 'text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30'}`}
-               title={document.isSorting ? t.sorting : t.autoSort}
-             >
-               {document.isSorting ? <Loader2 size={15} className="animate-spin" /> : <ListOrdered size={15} />}
-             </button>
-           )}
-
            <button 
              onClick={() => onDeleteDoc(document.id)} 
              className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-md transition"
@@ -227,7 +210,8 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
                    {/* Processing Spinner Overlay */}
                    {item.processing && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-                         <Loader2 className="animate-spin text-white" size={20} />
+                         {/* Simple spinner */}
+                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       </div>
                    )}
 
