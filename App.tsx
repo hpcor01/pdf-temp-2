@@ -370,7 +370,8 @@ const App = () => {
             "Agora o Αρχή PDF é capaz de ler e editar arquivos PDF",
             "Novo visual na tela de edição de imagens",
             "É possível mesclar imagens a arquivos PDF",
-            "Adicionado filtros de imagem"
+            "Adicionado filtros de imagem",
+            "Agora é possível girar a imagem, diretamente no modal de edição"
         ];
     }
     // Fallback/Translation for other languages
@@ -380,7 +381,8 @@ const App = () => {
         "Αρχή PDF can now read and edit PDF files",
         "New visual design for image editing screen",
         "It is possible to merge images with PDF files",
-        "Added image filters"
+        "Added image filters",
+        "Now you can rotate imagem directly in the image editor modal"
     ];
   };
 
