@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Trash2, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Search, Eye, Grid } from 'lucide-react';
+import { X, Save, Trash2, ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Search, Grid, Plus } from 'lucide-react';
 import { ImageItem, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -23,7 +23,8 @@ interface PdfPage {
   originalIndex: number;
   thumbnail: string;
   id: string;
-  originalBlob?: Blob; // Store blob/data for high-res view if possible (not implemented fully here for simplicity, using thumbnail or re-render)
+  sourceUrl: string; // The URL of the file this page belongs to
+  sourceType: 'pdf' | 'image';
 }
 
 const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, onUpdate, language }) => {
@@ -38,42 +39,56 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
   // Single Page View State
   const [viewingPageIndex, setViewingPageIndex] = useState<number | null>(null);
   const [pageZoom, setPageZoom] = useState(1);
+  const [highResPageUrl, setHighResPageUrl] = useState<string | null>(null);
+  const [imgNaturalSize, setImgNaturalSize] = useState<{w: number, h: number} | null>(null);
 
-  // Cached PDF Document
-  const pdfDocRef = useRef<any>(null);
+  // Hover Zoom State
+  const [hoveredZoomIndex, setHoveredZoomIndex] = useState<number | null>(null);
+
+  // Panning State for Single View
+  const [isPanning, setIsPanning] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const panStartRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+  const scrollStartRef = useRef<{ left: number, top: number }>({ left: 0, top: 0 });
 
   useEffect(() => {
     if (isOpen && item.type === 'pdf') {
-      loadPdfPages();
+      initializeEditor();
       setGridZoom(1); 
       setViewingPageIndex(null);
+      setHoveredZoomIndex(null);
     }
   }, [isOpen, item]);
 
-  const loadPdfPages = async () => {
+  const initializeEditor = async () => {
     setIsLoading(true);
+    setPages([]);
     try {
-      if (!window.pdfjsLib) {
-        console.error("PDF.js not loaded");
-        return;
-      }
+      await processFile(item.url, 'pdf');
+    } catch (e) {
+      console.error(e);
+      alert("Error initializing editor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // 1. Fetch data
-      const response = await fetch(item.url);
+  const processFile = async (url: string, type: 'pdf' | 'image') => {
+    if (type === 'pdf') {
+      if (!window.pdfjsLib) return;
+
+      const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
-
-      // 2. Load PDF Document using PDF.js
       const loadingTask = window.pdfjsLib.getDocument(arrayBuffer);
       const pdf = await loadingTask.promise;
-      pdfDocRef.current = pdf;
-
       const numPages = pdf.numPages;
-      const loadedPages: PdfPage[] = [];
 
-      // 3. Render each page to canvas to get a thumbnail
+      const newPages: PdfPage[] = [];
+
       for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 0.4 }); // Decent quality thumbnail
+        // Increased scale from 0.4 to 0.6 for better zoom quality while maintaining reasonable performance
+        const viewport = page.getViewport({ scale: 0.6 });
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.height = viewport.height;
@@ -81,19 +96,67 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
 
         if (context) {
           await page.render({ canvasContext: context, viewport: viewport }).promise;
-          loadedPages.push({
-            originalIndex: i - 1, // 0-based index for pdf-lib
+          newPages.push({
+            originalIndex: i - 1,
             thumbnail: canvas.toDataURL(),
-            id: Math.random().toString(36).substr(2, 9)
+            id: Math.random().toString(36).substr(2, 9),
+            sourceUrl: url,
+            sourceType: 'pdf'
           });
         }
       }
-      setPages(loadedPages);
-    } catch (error) {
-      console.error("Error loading PDF pages:", error);
-      alert("Failed to load PDF pages.");
+      setPages(prev => [...prev, ...newPages]);
+
+    } else {
+      // Handle Image as a single page
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = url;
+      await new Promise(r => img.onload = r);
+
+      // Create thumbnail
+      const canvas = document.createElement('canvas');
+      // Increased max thumb size from 300 to 800 to allow decent zoom on images
+      const MAX_THUMB_SIZE = 1024;
+      let w = img.width;
+      let h = img.height;
+      if (w > h) {
+        if (w > MAX_THUMB_SIZE) { h *= MAX_THUMB_SIZE / w; w = MAX_THUMB_SIZE; }
+      } else {
+        if (h > MAX_THUMB_SIZE) { w *= MAX_THUMB_SIZE / h; h = MAX_THUMB_SIZE; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, w, h);
+
+      setPages(prev => [...prev, {
+        originalIndex: 0,
+        thumbnail: canvas.toDataURL(),
+        id: Math.random().toString(36).substr(2, 9),
+        sourceUrl: url,
+        sourceType: 'image'
+      }]);
+    }
+  };
+
+  const handleAddFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    setIsLoading(true);
+    try {
+      for (let i = 0; i < e.target.files.length; i++) {
+        const file = e.target.files[i];
+        const url = URL.createObjectURL(file);
+        const type = file.type === 'application/pdf' ? 'pdf' : 'image';
+        await processFile(url, type);
+      }
+    } catch (err) {
+      console.error("Error adding files", err);
+      alert("Error adding files");
     } finally {
       setIsLoading(false);
+      e.target.value = ''; // Reset input
     }
   };
 
@@ -106,33 +169,56 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
     setIsLoading(true);
     try {
       const { PDFDocument } = window.PDFLib;
-
-      // Load original PDF
-      const originalArrayBuffer = await fetch(item.url).then(res => res.arrayBuffer());
-      const originalPdf = await PDFDocument.load(originalArrayBuffer);
-      
-      // Create new PDF
       const newPdf = await PDFDocument.create();
       
-      // Copy pages in the new order
-      const pageIndices = pages.map(p => p.originalIndex);
-      const copiedPages = await newPdf.copyPages(originalPdf, pageIndices);
-      
-      copiedPages.forEach((page: any) => newPdf.addPage(page));
+      // Cache loaded PDFs to avoid re-fetching/re-parsing
+      const pdfCache: Record<string, any> = {};
 
-      // Save to bytes
+      for (const page of pages) {
+        if (page.sourceType === 'pdf') {
+          let sourcePdf = pdfCache[page.sourceUrl];
+          
+          if (!sourcePdf) {
+            const arrayBuffer = await fetch(page.sourceUrl).then(res => res.arrayBuffer());
+            sourcePdf = await PDFDocument.load(arrayBuffer);
+            pdfCache[page.sourceUrl] = sourcePdf;
+          }
+
+          const [copiedPage] = await newPdf.copyPages(sourcePdf, [page.originalIndex]);
+          newPdf.addPage(copiedPage);
+
+        } else {
+           // Handle Image
+           const imageBytes = await fetch(page.sourceUrl).then(res => res.arrayBuffer());
+           let image;
+           // Basic detection usually sufficient if extension is correct, but robust implementation checks headers.
+           // Here assuming PNG/JPG/WebP based on what app allows.
+           // PDF-lib supports PNG and JPG. WebP needs conversion (not implemented here for brevity, assumed supported or handled elsewhere).
+           // Assuming common formats:
+           try {
+              image = await newPdf.embedPng(imageBytes);
+           } catch {
+              image = await newPdf.embedJpg(imageBytes);
+           }
+           
+           if (image) {
+             const { width, height } = image.scale(1);
+             const page = newPdf.addPage([width, height]);
+             page.drawImage(image, { x: 0, y: 0, width, height });
+           }
+        }
+      }
+
       const pdfBytes = await newPdf.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const newUrl = URL.createObjectURL(blob);
 
-      onUpdate({
-        ...item,
-        url: newUrl
-      });
+      onUpdate({ ...item, url: newUrl });
       onClose();
+
     } catch (error) {
       console.error("Error saving PDF:", error);
-      alert("Error saving PDF.");
+      alert("Error saving PDF: " + (error instanceof Error ? error.message : "Unknown"));
     } finally {
       setIsLoading(false);
     }
@@ -143,27 +229,15 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
     newPages.splice(index, 1);
     setPages(newPages);
     if (viewingPageIndex !== null && index === viewingPageIndex) {
-       setViewingPageIndex(null); // Close view if deleted
+       setViewingPageIndex(null);
     } else if (viewingPageIndex !== null && index < viewingPageIndex) {
-       setViewingPageIndex(viewingPageIndex - 1); // Adjust index
-    }
-  };
-
-  const movePage = (index: number, direction: 'left' | 'right') => {
-    if (direction === 'left' && index > 0) {
-      const newPages = [...pages];
-      [newPages[index - 1], newPages[index]] = [newPages[index], newPages[index - 1]];
-      setPages(newPages);
-    } else if (direction === 'right' && index < pages.length - 1) {
-      const newPages = [...pages];
-      [newPages[index + 1], newPages[index]] = [newPages[index], newPages[index + 1]];
-      setPages(newPages);
+       setViewingPageIndex(viewingPageIndex - 1);
     }
   };
 
   // Zoom handlers
   const handleZoomIn = () => {
-    if (viewingPageIndex !== null) setPageZoom(prev => Math.min(prev + 0.25, 4));
+    if (viewingPageIndex !== null) setPageZoom(prev => Math.min(prev + 0.25, 5));
     else setGridZoom(prev => Math.min(prev + 0.25, 3));
   };
   
@@ -201,26 +275,35 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
 
   // --- Single Page View Logic ---
   
-  const [highResPageUrl, setHighResPageUrl] = useState<string | null>(null);
-
   useEffect(() => {
     const loadHighRes = async () => {
-      if (viewingPageIndex === null || !pdfDocRef.current) return;
+      setHighResPageUrl(null);
+      setImgNaturalSize(null);
+      if (viewingPageIndex === null) return;
       
-      setHighResPageUrl(null); // Clear previous
-      const pageIndex = pages[viewingPageIndex].originalIndex;
+      const page = pages[viewingPageIndex];
       
       try {
-        const page = await pdfDocRef.current.getPage(pageIndex + 1); // PDF.js is 1-based
-        const viewport = page.getViewport({ scale: 2 }); // High quality for view
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        
-        if (context) {
-           await page.render({ canvasContext: context, viewport }).promise;
-           setHighResPageUrl(canvas.toDataURL());
+        if (page.sourceType === 'pdf') {
+            if (!window.pdfjsLib) return;
+            const response = await fetch(page.sourceUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            const pdf = await window.pdfjsLib.getDocument(arrayBuffer).promise;
+            
+            const pdfPage = await pdf.getPage(page.originalIndex + 1);
+            // Increased scale to 3.0 for better readability of small documents
+            const viewport = pdfPage.getViewport({ scale: 3.0 }); 
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            if (context) {
+               await pdfPage.render({ canvasContext: context, viewport }).promise;
+               setHighResPageUrl(canvas.toDataURL());
+            }
+        } else {
+           setHighResPageUrl(page.sourceUrl);
         }
       } catch (e) {
         console.error("Error rendering page view", e);
@@ -229,12 +312,96 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
 
     loadHighRes();
     setPageZoom(1);
+    setIsPanning(false);
   }, [viewingPageIndex, pages]);
+
+  // Handle Wheel Zoom in Single Page View
+  const handleWheel = (e: React.WheelEvent) => {
+    if (viewingPageIndex === null) return;
+    if (e.ctrlKey || e.metaKey || true) { // Always allow wheel zoom in this modal for convenience
+       if (e.deltaY < 0) {
+         setPageZoom(prev => Math.min(prev + 0.1, 5));
+       } else {
+         setPageZoom(prev => Math.max(prev - 0.1, 0.5));
+       }
+    }
+  };
+
+  // Pan Handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (viewingPageIndex === null || !scrollContainerRef.current) return;
+    e.preventDefault();
+    setIsPanning(true);
+    panStartRef.current = { x: e.clientX, y: e.clientY };
+    scrollStartRef.current = { 
+        left: scrollContainerRef.current.scrollLeft, 
+        top: scrollContainerRef.current.scrollTop 
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isPanning || !scrollContainerRef.current) return;
+    const dx = e.clientX - panStartRef.current.x;
+    const dy = e.clientY - panStartRef.current.y;
+    scrollContainerRef.current.scrollLeft = scrollStartRef.current.left - dx;
+    scrollContainerRef.current.scrollTop = scrollStartRef.current.top - dy;
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  // Calculate dynamic style for image to ensure proper scrolling
+  const getImageStyle = () => {
+    const isFit = pageZoom === 1;
+    
+    // If we have natural dimensions and user zoomed in, force explicit size
+    if (!isFit && imgNaturalSize && scrollContainerRef.current) {
+        // Calculate the "Fit" dimensions (what CSS 'contain' does)
+        const containerW = scrollContainerRef.current.clientWidth - 64; // p-8 = 32px * 2
+        const containerH = scrollContainerRef.current.clientHeight - 64;
+        
+        const scaleW = containerW / imgNaturalSize.w;
+        const scaleH = containerH / imgNaturalSize.h;
+        const baseScale = Math.min(scaleW, scaleH);
+
+        return {
+            width: `${imgNaturalSize.w * baseScale * pageZoom}px`,
+            height: `${imgNaturalSize.h * baseScale * pageZoom}px`,
+            maxWidth: 'none',
+            maxHeight: 'none'
+        };
+    }
+
+    // Default responsive fit
+    return {
+        maxWidth: '100%',
+        maxHeight: '100%',
+        objectFit: 'contain' as const
+    };
+  };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      
+      {/* Hover Zoom Overlay */}
+      {hoveredZoomIndex !== null && viewingPageIndex === null && pages[hoveredZoomIndex] && (
+        <div className="fixed inset-0 z-[60] pointer-events-none flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
+          <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 animate-fade-in scale-100 origin-center transition-transform">
+            <img 
+              src={pages[hoveredZoomIndex].thumbnail} 
+              alt="Preview" 
+              className="max-h-[95vh] max-w-[95vw] object-contain rounded" 
+            />
+            <div className="text-center text-xs mt-2 text-gray-500 dark:text-gray-400 font-medium">
+               {t.page} {hoveredZoomIndex + 1}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white dark:bg-gray-900 w-[80vw] h-[80vh] rounded-lg flex flex-col border border-gray-300 dark:border-gray-700 shadow-2xl transition-colors duration-300">
         
         {/* Header */}
@@ -276,22 +443,29 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
           ) : viewingPageIndex !== null ? (
             // --- Single Page View Mode ---
             <div className="w-full h-full flex flex-col">
-               <div className="flex-1 overflow-auto flex items-center justify-center p-8 custom-scrollbar relative">
-                 {highResPageUrl ? (
-                   <img 
-                     src={highResPageUrl} 
-                     alt="Page View" 
-                     className="shadow-2xl transition-transform duration-200"
-                     style={{ 
-                       transform: `scale(${pageZoom})`,
-                       maxWidth: '100%',
-                       maxHeight: '100%',
-                       objectFit: 'contain'
-                     }} 
-                   />
-                 ) : (
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
-                 )}
+               <div 
+                 ref={scrollContainerRef}
+                 className={`flex-1 overflow-auto flex p-0 relative ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+                 onWheel={handleWheel}
+                 onMouseDown={handleMouseDown}
+                 onMouseMove={handleMouseMove}
+                 onMouseUp={handleMouseUp}
+                 onMouseLeave={handleMouseUp}
+               >
+                 <div className="min-w-full min-h-full flex items-center justify-center p-8">
+                    {highResPageUrl ? (
+                    <img 
+                        src={highResPageUrl} 
+                        alt="Page View" 
+                        className="shadow-2xl transition-all duration-200 m-auto block"
+                        draggable={false}
+                        onLoad={(e) => setImgNaturalSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
+                        style={getImageStyle()} 
+                    />
+                    ) : (
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500 m-auto"></div>
+                    )}
+                 </div>
                </div>
                
                {/* View Navigation Bar */}
@@ -353,15 +527,14 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
                       <div className="aspect-[1/1.4] bg-gray-200 dark:bg-gray-900 mb-2 overflow-hidden rounded relative">
                         <img src={page.thumbnail} alt={`Page ${index + 1}`} className="w-full h-full object-contain" draggable={false} />
                         
-                        {/* Hover Overlay for View */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                           <button 
-                             onClick={() => setViewingPageIndex(index)}
-                             className="p-2 bg-white/90 rounded-full text-gray-800 hover:text-emerald-500 hover:scale-110 transition shadow-lg"
-                             title={t.viewPage}
-                           >
-                             <Eye size={20} />
-                           </button>
+                        {/* Zoom Button - Bottom Right Corner - HOVER TRIGGER ONLY */}
+                        <div 
+                            onMouseEnter={() => setHoveredZoomIndex(index)}
+                            onMouseLeave={() => setHoveredZoomIndex(null)}
+                            onClick={(e) => { e.stopPropagation(); setViewingPageIndex(index); }}
+                            className="absolute bottom-1 right-1 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-full text-gray-600 dark:text-gray-300 hover:text-emerald-500 dark:hover:text-emerald-400 transition shadow-sm border border-gray-200 dark:border-gray-700 cursor-zoom-in"
+                        >
+                            <Search size={14} />
                         </div>
                       </div>
                       
@@ -384,16 +557,39 @@ const PdfEditorModal: React.FC<PdfEditorModalProps> = ({ item, isOpen, onClose, 
 
         {/* Footer (Only shown in Grid Mode) */}
         {viewingPageIndex === null && (
-          <div className="h-16 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end px-6 space-x-4 bg-white dark:bg-gray-900">
-             <button onClick={onClose} className="px-4 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">{t.cancel}</button>
-             <button 
-               onClick={handleSave} 
-               disabled={pages.length === 0}
-               className="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-6 py-2 rounded font-medium flex items-center shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-             >
-               <Save size={18} className="mr-2" />
-               {t.savePdf}
-             </button>
+          <div className="h-16 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-white dark:bg-gray-900">
+             
+             {/* Add Pages Button & Counter */}
+             <div className="flex items-center space-x-4">
+                <label className="cursor-pointer flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded font-medium transition text-sm">
+                    <Plus size={16} className="mr-2" />
+                    {t.addPages}
+                    <input 
+                        type="file" 
+                        multiple 
+                        accept="application/pdf,image/*" 
+                        className="hidden" 
+                        onChange={handleAddFiles}
+                    />
+                </label>
+                {pages.length > 0 && (
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {t.total}: {pages.length}
+                    </span>
+                )}
+             </div>
+
+             <div className="flex space-x-4">
+                <button onClick={onClose} className="px-4 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">{t.cancel}</button>
+                <button 
+                onClick={handleSave} 
+                disabled={pages.length === 0}
+                className="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-6 py-2 rounded font-medium flex items-center shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                <Save size={18} className="mr-2" />
+                {t.savePdf}
+                </button>
+             </div>
           </div>
         )}
       </div>

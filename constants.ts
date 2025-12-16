@@ -66,7 +66,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     brightness: "Brilho",
     contrast: "Contraste",
     adjustHelp: "Ajuste o contraste para facilitar a remoção do fundo.",
-    applyAdjustments: "Aplicar Ajustes"
+    applyAdjustments: "Aplicar Ajustes",
+    updateAvailable: "Nova versão disponível",
+    updateNow: "Atualizar",
+    addPages: "Adicionar Páginas"
   },
   'en': {
     selectAll: "Select All",
@@ -125,7 +128,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     brightness: "Brightness",
     contrast: "Contrast",
     adjustHelp: "Adjust contrast to help with background removal.",
-    applyAdjustments: "Apply Adjustments"
+    applyAdjustments: "Apply Adjustments",
+    updateAvailable: "New version available",
+    updateNow: "Update",
+    addPages: "Add Pages"
   },
   'es': {
     selectAll: "Seleccionar todos",
@@ -184,7 +190,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     brightness: "Brillo",
     contrast: "Contraste",
     adjustHelp: "Ajuste el contraste para ayudar a eliminar el fondo.",
-    applyAdjustments: "Aplicar Ajustes"
+    applyAdjustments: "Aplicar Ajustes",
+    updateAvailable: "Nueva versión disponible",
+    updateNow: "Actualizar",
+    addPages: "Añadir páginas"
   },
   'el': {
     selectAll: "Επιλογή όλων",
@@ -243,7 +252,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     brightness: "Φωτεινότητα",
     contrast: "Αντίθεση",
     adjustHelp: "Ρυθμίστε την αντίθεση για καλύτερη αφαίρεση φόντου.",
-    applyAdjustments: "Εφαρμογή"
+    applyAdjustments: "Εφαρμογή",
+    updateAvailable: "Νέα έκδοση διαθέσιμη",
+    updateNow: "Ενημέρωση",
+    addPages: "Προσθήκη σελίδων"
   },
   'he': {
     selectAll: "בחר הכל",
@@ -302,6 +314,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     brightness: "בהירות",
     contrast: "ניגודיות",
     adjustHelp: "התאם ניגודיות כדי לעזור בהסרת הרקע.",
-    applyAdjustments: "החל"
+    applyAdjustments: "החל",
+    updateAvailable: "גרסה חדשה זמינה",
+    updateNow: "עדכן",
+    addPages: "הוסף עמודים"
   }
 };

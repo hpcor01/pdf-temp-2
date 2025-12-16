@@ -33,3 +33,8 @@ export interface CropArea {
 
 export type Language = 'pt-BR' | 'en' | 'he' | 'el' | 'es';
 export type Theme = 'light' | 'dark';
+
+// Global constant definition injected by Vite
+declare global {
+  const __APP_VERSION__: string;
+}

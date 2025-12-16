@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, X, Sparkles } from 'lucide-react';
 import TopBar from './components/TopBar';
 import DocumentColumn from './components/DocumentColumn';
 import EditorModal from './components/EditorModal';
 import PdfEditorModal from './components/PdfEditorModal';
 import Toast from './components/Toast';
+import UpdateNotification from './components/UpdateNotification';
 import { DocumentGroup, AppSettings, ImageItem, Language, Theme } from './types';
 import { INITIAL_SETTINGS, TRANSLATIONS } from './constants';
 import { generatePDF } from './services/pdfService';
@@ -36,7 +37,55 @@ const App = () => {
     type: 'success'
   });
 
+  // Update Availability State
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  
+  // Version Info State
+  const [showVersionInfo, setShowVersionInfo] = useState(false);
+
   const t = TRANSLATIONS[language];
+
+  // --- Version Check Logic ---
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        // Fetch version.json with timestamp to avoid caching the JSON file itself
+        const response = await fetch(`./version.json?t=${new Date().getTime()}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const remoteVersion = data.version;
+        
+        // __APP_VERSION__ is injected by Vite at build time
+        if (typeof __APP_VERSION__ !== 'undefined' && remoteVersion !== __APP_VERSION__) {
+          setIsUpdateAvailable(true);
+        }
+      } catch (error) {
+        // Silent fail (dev mode or network error)
+        console.debug("Version check failed", error);
+      }
+    };
+
+    // Check on mount
+    checkVersion();
+
+    // Check every 5 minutes
+    const interval = setInterval(checkVersion, 5 * 60 * 1000);
+    
+    // Check when window gains focus
+    const handleFocus = () => checkVersion();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  const handleUpdateApp = () => {
+    // Reload the page to fetch new assets (cache busting is handled by Vite filenames usually, but reload ensures html update)
+    window.location.reload();
+  };
 
   // --- Handlers ---
 
@@ -312,6 +361,27 @@ const App = () => {
 
   const allSelected = documents.length > 0 && documents.every(d => d.selected);
 
+  // Changelog Content
+  const getChangelog = () => {
+    if (language === 'pt-BR') {
+        return [
+            "Layout melhorado",
+            "Adicionado rodapé na aplicação",
+            "Agora o Αρχή PDF é capaz de ler e editar arquivos PDF",
+            "Novo visual na tela de edição de imagens",
+            "É possível mesclar imagens a arquivos PDF"
+        ];
+    }
+    // Fallback/Translation for other languages
+    return [
+        "Improved layout",
+        "Added footer to the application",
+        "Αρχή PDF can now read and edit PDF files",
+        "New visual design for image editing screen",
+        "It is possible to merge images with PDF files"
+    ];
+  };
+
   return (
     <div className={theme}>
       <div 
@@ -372,11 +442,44 @@ const App = () => {
           </div>
 
           {/* Footer - Outside the dashed frame, bottom of screen area */}
-          <footer className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400 space-y-1 pb-1">
+          <footer className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400 space-y-1 pb-1 relative z-40">
              <p>Αρχή - {t.footerQuote}</p>
-             <p>Αρχή PDF© {new Date().getFullYear()} - {t.rightsReserved}. | <a title="Help" href="mailto:ti@advocaciabichara.com.br">{t.supportLink}</a></p>
+             <p>
+               Αρχή PDF© {new Date().getFullYear()} - {t.rightsReserved}. |{' '}
+               <a title="Help" href="mailto:ti@advocaciabichara.com.br" className="hover:text-emerald-500 transition">{t.supportLink}</a> |{' '}
+               <button 
+                 onClick={() => setShowVersionInfo(!showVersionInfo)} 
+                 className="hover:text-emerald-500 transition font-medium underline decoration-dotted underline-offset-2"
+               >
+                 Versão 2.0
+               </button>
+             </p>
           </footer>
         </main>
+
+        {/* Version Info Modal/Toast */}
+        {showVersionInfo && (
+          <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-emerald-500/30 z-[60] w-80 text-left transition-all duration-300 animate-slide-up">
+             <div className="flex justify-between items-center mb-3">
+                 <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
+                    <Sparkles size={18} />
+                    <h3 className="font-bold text-base">Versão 2.0</h3>
+                 </div>
+                 <button 
+                   onClick={() => setShowVersionInfo(false)} 
+                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                 >
+                   <X size={16}/>
+                 </button>
+             </div>
+             <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300 list-disc pl-4">
+                 {getChangelog().map((feature, idx) => (
+                    <li key={idx}>{feature}</li>
+                 ))}
+             </ul>
+             <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white dark:bg-gray-800 border-b border-r border-emerald-500/30 rotate-45"></div>
+          </div>
+        )}
 
         {/* Toast Notification */}
         <Toast 
@@ -384,6 +487,13 @@ const App = () => {
           type={toast.type}
           isVisible={toast.visible}
           onClose={() => setToast({ ...toast, visible: false })}
+          language={language}
+        />
+
+        {/* Update Notification Popup */}
+        <UpdateNotification 
+          isVisible={isUpdateAvailable}
+          onUpdate={handleUpdateApp}
           language={language}
         />
 

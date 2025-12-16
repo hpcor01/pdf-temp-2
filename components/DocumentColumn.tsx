@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Trash2, FileText, Plus, Search, RotateCw } from 'lucide-react';
 import { DocumentGroup, ImageItem, AppSettings, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
@@ -22,7 +22,7 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
   settings, 
   onAddItem, 
   onRemoveItem, 
-  onEditItem,
+  onEditItem, 
   onRenameDoc,
   onDeleteDoc,
   onToggleSelection,
@@ -36,6 +36,8 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
   const [hoveredPreviewId, setHoveredPreviewId] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       onAddItem(document.id, e.target.files);
@@ -181,9 +183,13 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
       {/* Items List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-white dark:bg-transparent">
         {document.items.length === 0 && (
-          <div className={`h-40 flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 border-2 border-dashed rounded-lg m-2 pointer-events-none transition-colors
-            ${isDraggingFile ? 'border-emerald-500 text-emerald-500' : 'border-gray-200 dark:border-gray-700'}`}>
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className={`h-40 flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 border-2 border-dashed rounded-lg m-2 transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50
+            ${isDraggingFile ? 'border-emerald-500 text-emerald-500' : 'border-gray-200 dark:border-gray-700 hover:border-emerald-400'}`}
+          >
             <span className="text-sm">{isDraggingFile ? t.dropHere : t.dragDrop}</span>
+            <span className="text-xs mt-1 opacity-70 scale-90">(ou clique aqui)</span>
           </div>
         )}
         
@@ -281,6 +287,7 @@ const DocumentColumn: React.FC<DocumentColumnProps> = ({
            <Plus size={16} className="mr-1.5" />
            {t.addFiles}
            <input 
+             ref={fileInputRef}
              type="file" 
              multiple 
              accept="image/png, image/jpeg, image/jpg, image/webp, application/pdf"

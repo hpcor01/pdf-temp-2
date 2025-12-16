@@ -109,7 +109,7 @@ const TopBar: React.FC<TopBarProps> = ({
         {/* Bulk AI Action */}
         <button 
           onClick={onRemoveBgBatch}
-          disabled={isProcessing || isSaving}
+          disabled={true}
           className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition disabled:opacity-50"
           title={t.removeBgBatch}
         >
