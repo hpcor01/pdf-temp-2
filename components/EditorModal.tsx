@@ -336,7 +336,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
       const newUrl = await removeBackground(sourceUrl);
       pushToHistory(newUrl);
     } catch (e) {
-      alert("Background removal failed. Please check internet connection.");
+      alert("Background removal failed.");
     } finally {
       setIsProcessing(false);
     }
@@ -463,7 +463,7 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
               
               <button 
                 onClick={() => { setActiveTool('none'); handleRemoveBg(); }}
-                disabled={isProcessing || activeTool === 'crop'}
+                disabled={true || activeTool === 'crop'}
                 className="w-full flex items-center p-3 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-200 disabled:opacity-50"
               >
                 <Eraser className="mr-3 text-emerald-500 dark:text-emerald-400" size={18} />
