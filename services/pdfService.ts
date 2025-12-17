@@ -52,7 +52,7 @@ const performOCR = async (base64: string): Promise<any[]> => {
   if (!window.Tesseract) return [];
   
   const result = await window.Tesseract.recognize(base64, 'por+eng', {
-    logger: m => console.debug(m)
+    logger: (m: any) => console.debug(m)
   });
 
   return result.data.words;
