@@ -49,30 +49,22 @@ const App = () => {
   useEffect(() => {
     const checkVersion = async () => {
       try {
-        // Fetch version.json with timestamp to avoid caching the JSON file itself
         const response = await fetch(`./version.json?t=${new Date().getTime()}`);
         if (!response.ok) return;
         
         const data = await response.json();
         const remoteVersion = data.version;
         
-        // __APP_VERSION__ is injected by Vite at build time
         if (typeof __APP_VERSION__ !== 'undefined' && remoteVersion !== __APP_VERSION__) {
           setIsUpdateAvailable(true);
         }
       } catch (error) {
-        // Silent fail (dev mode or network error)
         console.debug("Version check failed", error);
       }
     };
 
-    // Check on mount
     checkVersion();
-
-    // Check every 5 minutes
     const interval = setInterval(checkVersion, 5 * 60 * 1000);
-    
-    // Check when window gains focus
     const handleFocus = () => checkVersion();
     window.addEventListener('focus', handleFocus);
 
@@ -83,7 +75,6 @@ const App = () => {
   }, []);
 
   const handleUpdateApp = () => {
-    // Reload the page to fetch new assets (cache busting is handled by Vite filenames usually, but reload ensures html update)
     window.location.reload();
   };
 
@@ -99,7 +90,7 @@ const App = () => {
   };
 
   const handleDeleteDocument = (id: string) => {
-    if (documents.length <= 1) return; // Prevent deleting last column
+    if (documents.length <= 1) return; 
     setDocuments(documents.filter(d => d.id !== id));
   };
 
@@ -116,7 +107,6 @@ const App = () => {
   };
 
   const handleClearAll = () => {
-    // Reset to single empty column
     setDocuments([{ id: Date.now().toString(), title: 'PDF 1', items: [], selected: false }]);
   };
 
@@ -174,26 +164,22 @@ const App = () => {
     const item = doc.items.find(i => i.id === itemId);
     if (!item || item.type !== 'image') return;
 
-    // Use a canvas to rotate the image 90 degrees clockwise
     const img = new Image();
     img.src = item.url;
     await new Promise((resolve) => { img.onload = resolve; });
 
     const canvas = document.createElement('canvas');
-    // Swap width and height for 90 deg rotation
     canvas.width = img.height;
     canvas.height = img.width;
     
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Translate to center, rotate, translate back
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(90 * Math.PI / 180);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
 
     const newUrl = canvas.toDataURL();
-    
     const updatedItem = { ...item, url: newUrl };
     
     setDocuments(prev => prev.map(d => {
@@ -215,20 +201,12 @@ const App = () => {
 
       if (sourceDocIndex === -1 || targetDocIndex === -1) return prevDocs;
 
-      // Find and remove item from source
       const sourceItems = [...newDocs[sourceDocIndex].items];
       const itemIndex = sourceItems.findIndex(i => i.id === itemId);
       
       if (itemIndex === -1) return prevDocs;
-      
       const [movedItem] = sourceItems.splice(itemIndex, 1);
-      
-      // Update source items
       newDocs[sourceDocIndex] = { ...newDocs[sourceDocIndex], items: sourceItems };
-
-      // Add to target
-      // If source and target are the same, we need to re-fetch items from the *updated* source (which is the target)
-      // to avoid index shifting issues, but simpler to just operate on newDocs references
       
       const targetItems = sourceDocId === targetDocId ? sourceItems : [...newDocs[targetDocIndex].items];
       
@@ -239,7 +217,6 @@ const App = () => {
       }
 
       newDocs[targetDocIndex] = { ...newDocs[targetDocIndex], items: targetItems };
-
       return newDocs;
     });
   };
@@ -254,7 +231,6 @@ const App = () => {
 
     setIsProcessing(true);
 
-    // Collect all tasks first
     const tasks: { docId: string, itemId: string, url: string }[] = [];
     docsToProcess.forEach(doc => {
       doc.items.forEach(item => {
@@ -264,7 +240,6 @@ const App = () => {
       });
     });
 
-    // Mark all as processing initially
     setDocuments(prev => prev.map(doc => {
       if (!doc.selected) return doc;
       return {
@@ -274,15 +249,11 @@ const App = () => {
     }));
 
     try {
-      // Process Sequentially (One by One) to avoid heavy load with Imgly in browser
       let successCount = 0;
-      
       for (const task of tasks) {
         try {
           const newUrl = await removeBackground(task.url);
           successCount++;
-
-          // Update this specific item immediately
           setDocuments(prev => prev.map(doc => {
              if (doc.id !== task.docId) return doc;
              return {
@@ -293,10 +264,8 @@ const App = () => {
                 })
              };
           }));
-
         } catch (e) {
            console.error(`Failed to process item ${task.itemId}`, e);
-           // Update status to failed (remove processing spinner)
            setDocuments(prev => prev.map(doc => {
              if (doc.id !== task.docId) return doc;
              return {
@@ -310,12 +279,11 @@ const App = () => {
         }
       }
       
-      if (successCount < tasks.length) {
+      if (successCount < tasks.length && tasks.length > 0) {
         setToast({ visible: true, message: t.batchProcessError, type: 'error' });
       } else {
         setToast({ visible: true, message: "Processamento concluído!", type: 'success' });
       }
-
     } catch (e) {
       console.error("Batch processing fatal error", e);
     } finally {
@@ -333,16 +301,11 @@ const App = () => {
 
     setIsSaving(true);
     try {
-      await generatePDF(docsToSave);
-      
-      // Success Logic
+      await generatePDF(docsToSave, settings.useOCR);
       setToast({ visible: true, message: t.docSaved, type: 'success' });
-      
-      // Clear documents after a short delay to allow PDF generation/download to initiate
       setTimeout(() => {
         handleClearAll();
       }, 500);
-
     } catch (e) {
       console.error(e);
       setToast({ visible: true, message: t.docSaveError, type: 'error' });
@@ -360,11 +323,14 @@ const App = () => {
   };
 
   const allSelected = documents.length > 0 && documents.every(d => d.selected);
+  
+  // Refined logic: disable if ANY selected column contains a PDF file
+  const isPdfSelected = documents.some(doc => doc.selected && doc.items.some(item => item.type === 'pdf'));
 
-  // Changelog Content
   const getChangelog = () => {
     if (language === 'pt-BR') {
         return [
+            "OCR Inteligente (Torna PDFs pesquisáveis)",
             "Funcionalidade de Divisão de PDF por intervalos",
             "Layout melhorado e correções de bugs",
             "Adicionado rodapé na aplicação",
@@ -375,6 +341,7 @@ const App = () => {
         ];
     }
     return [
+        "Smart OCR (Makes PDFs searchable)",
         "PDF Splitting by page ranges",
         "Improved layout and bug fixes",
         "Added footer to the application",
@@ -398,6 +365,7 @@ const App = () => {
           onRemoveBgBatch={handleBatchRemoveBg}
           isSaving={isSaving}
           isProcessing={isProcessing}
+          isPdfSelected={isPdfSelected}
           allSelected={allSelected}
           onToggleSelectAll={handleToggleSelectAll}
           language={language}
@@ -406,7 +374,6 @@ const App = () => {
           toggleTheme={toggleTheme}
         />
 
-        {/* Main Workspace */}
         <main className="flex-1 overflow-hidden p-4 sm:p-6 flex flex-col">
           <div className="flex-1 w-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-3xl relative flex flex-col overflow-hidden transition-colors dark:bg-[#232B3A]">
             
@@ -428,13 +395,10 @@ const App = () => {
                     language={language}
                   />
                 ))}
-                
-                {/* Empty spacer for visual balance when scrolling right */}
                 <div className="w-20 flex-shrink-0" />
               </div>
             </div>
 
-            {/* Floating Action Button - Positioned inside the dashed frame */}
             <button 
               onClick={handleAddDocument}
               className="absolute bottom-6 right-6 w-14 h-14 bg-emerald-500 hover:bg-emerald-400 rounded-full shadow-2xl flex items-center justify-center text-white transition transform hover:scale-105 z-30"
@@ -444,7 +408,6 @@ const App = () => {
             </button>
           </div>
 
-          {/* Footer - Outside the dashed frame, bottom of screen area */}
           <footer className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400 space-y-1 pb-1 relative z-40">
              <p>Αρχή - {t.footerQuote}</p>
              <p>
@@ -460,7 +423,6 @@ const App = () => {
           </footer>
         </main>
 
-        {/* Version Info Modal/Toast */}
         {showVersionInfo && (
           <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-emerald-500/30 z-[60] w-80 text-left transition-all duration-300 animate-slide-up">
              <div className="flex justify-between items-center mb-3">
@@ -490,7 +452,6 @@ const App = () => {
           </div>
         )}
 
-        {/* Toast Notification */}
         <Toast 
           message={toast.message}
           type={toast.type}
@@ -499,14 +460,12 @@ const App = () => {
           language={language}
         />
 
-        {/* Update Notification Popup */}
         <UpdateNotification 
           isVisible={isUpdateAvailable}
           onUpdate={handleUpdateApp}
           language={language}
         />
 
-        {/* Image Editor Modal */}
         {editingItem && editingItem.item.type === 'image' && (
           <EditorModal 
             item={editingItem.item}
@@ -517,7 +476,6 @@ const App = () => {
           />
         )}
 
-        {/* PDF Editor Modal */}
         {editingItem && editingItem.item.type === 'pdf' && (
           <PdfEditorModal
             item={editingItem.item}
