@@ -22,7 +22,6 @@ export interface AppSettings {
   convertToPdf: boolean;
   saveSeparately: boolean;
   saveInGroup: boolean;
-  useOCR: boolean;
 }
 
 export interface CropArea {

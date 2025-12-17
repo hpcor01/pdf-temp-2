@@ -7,82 +7,20 @@ declare global {
 }
 
 import { DocumentGroup } from "../types";
-import { GoogleGenAI, Type } from "@google/genai";
-
-interface OCRText {
-  t: string; // text
-  x: number; // 0-1000
-  y: number; // 0-1000
-  w: number; // width
-  h: number; // height
-}
-
-/**
- * Performs OCR using Gemini API to extract text with coordinates.
- */
-const performOCR = async (base64Image: string): Promise<OCRText[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  // Extract base64 data without prefix
-  const data = base64Image.split(',')[1] || base64Image;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [
-        {
-          parts: [
-            {
-              inlineData: {
-                data: data,
-                mimeType: "image/png"
-              }
-            },
-            {
-              text: "Act as an OCR engine. Extract all text from this image. Return ONLY a JSON array of objects representing words: { \"t\": \"text\", \"x\": x_coord, \"y\": y_coord, \"w\": width, \"h\": height }. Use a 0-1000 coordinate system where (0,0) is top-left."
-            }
-          ]
-        }
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              t: { type: Type.STRING },
-              x: { type: Type.NUMBER },
-              y: { type: Type.NUMBER },
-              w: { type: Type.NUMBER },
-              h: { type: Type.NUMBER }
-            },
-            required: ["t", "x", "y", "w", "h"]
-          }
-        }
-      }
-    });
-
-    const text = response.text;
-    if (!text) return [];
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("OCR API error:", error);
-    return [];
-  }
-};
 
 /**
  * Converts a PDF file (via ArrayBuffer) into an array of PNG images (one per page)
+ * This bypasses structural issues in source PDFs by "flattening" them into images.
  */
-const renderPdfToImages = async (arrayBuffer: ArrayBuffer): Promise<{ data: Uint8Array, base64: string }[]> => {
+const renderPdfToImages = async (arrayBuffer: ArrayBuffer): Promise<Uint8Array[]> => {
   if (!window.pdfjsLib) throw new Error("PDF.js not loaded");
   
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const pages: { data: Uint8Array, base64: string }[] = [];
+  const pngPages: Uint8Array[] = [];
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
+    // Use scale 2.0 for high resolution (approx 150-200 DPI equivalent)
     const viewport = page.getViewport({ scale: 2.0 });
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -94,20 +32,20 @@ const renderPdfToImages = async (arrayBuffer: ArrayBuffer): Promise<{ data: Uint
 
     await page.render({ canvasContext: context, viewport }).promise;
     
-    const base64: string = canvas.toDataURL('image/png');
+    // Convert canvas to PNG bytes
     const blob: Blob = await new Promise((resolve, reject) => {
       canvas.toBlob((b) => b ? resolve(b) : reject("Blob creation failed"), 'image/png');
     });
     
     const buffer = await blob.arrayBuffer();
-    pages.push({ data: new Uint8Array(buffer), base64 });
+    pngPages.push(new Uint8Array(buffer));
   }
   
-  return pages;
+  return pngPages;
 };
 
-// Helper to convert image URL to PNG info
-const getImageInfo = async (url: string): Promise<{ data: Uint8Array, base64: string }> => {
+// Helper to convert any image URL (blob/base64) to PNG bytes via Canvas
+const convertImageToPngBytes = async (url: string): Promise<Uint8Array> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
@@ -116,15 +54,20 @@ const getImageInfo = async (url: string): Promise<{ data: Uint8Array, base64: st
       canvas.width = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) { reject(new Error("No context")); return; }
+      if (!ctx) {
+        reject(new Error("Could not get canvas context"));
+        return;
+      }
       ctx.drawImage(img, 0, 0);
-      const base64 = canvas.toDataURL('image/png');
       canvas.toBlob((blob) => {
-        if (!blob) { reject(new Error("Blob failed")); return; }
-        blob.arrayBuffer().then(buffer => resolve({ data: new Uint8Array(buffer), base64 }));
+        if (!blob) {
+          reject(new Error("Canvas to Blob failed"));
+          return;
+        }
+        blob.arrayBuffer().then(buffer => resolve(new Uint8Array(buffer)));
       }, 'image/png');
     };
-    img.onerror = reject;
+    img.onerror = (e) => reject(e);
     img.src = url;
   });
 };
@@ -141,79 +84,80 @@ const downloadBlob = (data: Uint8Array, filename: string, mimeType: string) => {
   window.URL.revokeObjectURL(url);
 };
 
-export const generatePDF = async (groups: DocumentGroup[], useOCR: boolean = false): Promise<void> => {
+export const generatePDF = async (groups: DocumentGroup[]): Promise<void> => {
   if (!window.PDFLib) {
     alert("PDF library not loaded.");
     return;
   }
 
-  const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+  const { PDFDocument } = window.PDFLib;
 
   for (const group of groups) {
     if (group.items.length === 0) continue;
 
     try {
       const pdfDoc = await PDFDocument.create();
-      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
       let addedPageCount = 0;
 
       for (const item of group.items) {
-        let pagesToProcess: { data: Uint8Array, base64: string }[] = [];
-
         if (item.type === 'pdf') {
            try {
              let arrayBuffer;
-             if (item.originalFile) arrayBuffer = await item.originalFile.arrayBuffer();
-             else arrayBuffer = await fetch(item.url).then(res => res.arrayBuffer());
-             pagesToProcess = await renderPdfToImages(arrayBuffer);
+             if (item.originalFile) {
+               arrayBuffer = await item.originalFile.arrayBuffer();
+             } else {
+               arrayBuffer = await fetch(item.url).then(res => res.arrayBuffer());
+             }
+             
+             // Render PDF pages as images to avoid structural/compression errors
+             const pageImages = await renderPdfToImages(arrayBuffer);
+             
+             for (const pngBytes of pageImages) {
+               const image = await pdfDoc.embedPng(pngBytes);
+               const { width, height } = image.scale(1);
+               const page = pdfDoc.addPage([width, height]);
+               page.drawImage(image, { x: 0, y: 0, width, height });
+               addedPageCount++;
+             }
+
            } catch (error) {
              console.error(`Error processing PDF ${item.name}:`, error);
+             alert(`Erro ao processar o arquivo PDF: ${item.name}.`);
            }
         } else {
+           // Handle direct Image items
            try {
-             const info = await getImageInfo(item.url);
-             pagesToProcess = [info];
+             const pngBytes = await convertImageToPngBytes(item.url);
+             const image = await pdfDoc.embedPng(pngBytes);
+
+             const page = pdfDoc.addPage([595.28, 841.89]); // A4 Size in points
+             const { width, height } = image.scale(1);
+             
+             const pageWidth = page.getWidth();
+             const pageHeight = page.getHeight();
+             const margin = 20;
+             const availableWidth = pageWidth - (margin * 2);
+             const availableHeight = pageHeight - (margin * 2);
+             
+             const scaleRatio = Math.min(availableWidth / width, availableHeight / height);
+             
+             const finalWidth = width * scaleRatio;
+             const finalHeight = height * scaleRatio;
+             
+             const x = (pageWidth - finalWidth) / 2;
+             const y = (pageHeight - finalHeight) / 2;
+
+             page.drawImage(image, {
+               x,
+               y,
+               width: finalWidth,
+               height: finalHeight,
+             });
+             addedPageCount++;
            } catch (error) {
              console.error(`Error processing image ${item.name}:`, error);
+             alert(`Erro ao processar imagem: ${item.name}`);
            }
-        }
-
-        for (const pageInfo of pagesToProcess) {
-          const image = await pdfDoc.embedPng(pageInfo.data);
-          const { width, height } = image.scale(1);
-          const page = pdfDoc.addPage([width, height]);
-          page.drawImage(image, { x: 0, y: 0, width, height });
-
-          if (useOCR) {
-            console.log(`Performing OCR on page ${addedPageCount + 1}...`);
-            const words = await performOCR(pageInfo.base64);
-            
-            for (const word of words) {
-               // Gemini uses 0-1000 top-left. PDF-lib uses points bottom-left.
-               // x: word.x / 1000 * page_width
-               // y: (1000 - word.y) / 1000 * page_height - font_size
-               const textX = (word.x / 1000) * width;
-               // PDF coordinate y starts from bottom
-               const textY = height - ((word.y / 1000) * height);
-               
-               // Estimate font size based on word height
-               const fontSize = (word.h / 1000) * height || 10;
-
-               try {
-                 page.drawText(word.t, {
-                   x: textX,
-                   y: textY - fontSize * 0.8, // Basic vertical alignment adjustment
-                   size: fontSize,
-                   font: helveticaFont,
-                   color: rgb(0, 0, 0),
-                   opacity: 0, // Make text searchable but invisible
-                 });
-               } catch (e) {
-                 // Ignore invalid characters for standard font
-               }
-            }
-          }
-          addedPageCount++;
         }
       }
 
@@ -224,6 +168,7 @@ export const generatePDF = async (groups: DocumentGroup[], useOCR: boolean = fal
 
     } catch (err) {
       console.error("Error creating PDF for group " + group.title, err);
+      alert(`Erro ao criar PDF ${group.title}.`);
     }
   }
 };

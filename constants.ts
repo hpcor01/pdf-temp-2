@@ -6,7 +6,6 @@ export const INITIAL_SETTINGS = {
   convertToPdf: true,
   saveSeparately: false,
   saveInGroup: false,
-  useOCR: false,
 };
 
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
@@ -76,9 +75,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "Ex: 1-3, 5, 8-10",
     splitAction: "Dividir e Baixar",
     splitInvalid: "Intervalo inválido. Use formatos como 1-3 ou 5.",
-    comingSoon: "Em breve: Remoção de fundo de imagens por IA, compressão de arquivos PDF",
-    useOCR: "OCR Inteligente (IA)",
-    ocrProcessing: "Realizando OCR..."
+    comingSoon: "Em breve: Remoção de fundo de imagens por IA, compressão de arquivos PDF"
   },
   'en': {
     selectAll: "Select All",
@@ -146,9 +143,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "Ex: 1-3, 5, 8-10",
     splitAction: "Split and Download",
     splitInvalid: "Invalid range. Use formats like 1-3 or 5.",
-    comingSoon: "Coming soon: AI Background removal, PDF compression",
-    useOCR: "Smart OCR (AI)",
-    ocrProcessing: "Performing OCR..."
+    comingSoon: "Coming soon: AI Background removal, PDF compression"
   },
   'es': {
     selectAll: "Seleccionar todos",
@@ -157,7 +152,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     saveSeparately: "Guardar por separado",
     saveInGroup: "Guardar en grupo",
     save: "Guardar",
-    saving: "Salvando...",
+    saving: "Guardando...",
     total: "Total",
     dragDrop: "Arrastra o agrega",
     dropHere: "Suelta los archivos",
@@ -166,7 +161,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     editorTitle: "Editor de Imagen",
     pdfEditorTitle: "Editor de PDF",
     undo: "Deshacer",
-    redo: "Refazer",
+    redo: "Rehacer",
     reset: "Restaurar",
     cancel: "Cancelar",
     confirm: "Confirmar Edición",
@@ -215,10 +210,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitIntervals: "Intervalos de Página",
     splitPlaceholder: "Ej: 1-3, 5, 8-10",
     splitAction: "Dividir y Descargar",
-    splitInvalid: "Intervalo inválido. Use formatos como 1-3 ou 5.",
-    comingSoon: "Próximamente: Eliminación de fondo por IA, compresión de PDF",
-    useOCR: "OCR Inteligente (IA)",
-    ocrProcessing: "Realizando OCR..."
+    splitInvalid: "Intervalo inválido. Use formatos como 1-3 o 5.",
+    comingSoon: "Próximamente: Eliminación de fondo por IA, compresión de PDF"
   },
   'el': {
     selectAll: "Επιλογή όλων",
@@ -286,9 +279,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "Πχ: 1-3, 5, 8-10",
     splitAction: "Διαίρεση και Λήψη",
     splitInvalid: "Μη έγκυρο εύρος.",
-    comingSoon: "Σύντομα: Αφαίρεση φόντου με IA, συμπίεση PDF",
-    useOCR: "Έξυπνο OCR (IA)",
-    ocrProcessing: "Εκτέλεση OCR..."
+    comingSoon: "Σύντομα: Αφαίρεση φόντου με IA, συμπίεση PDF"
   },
   'he': {
     selectAll: "בחר הכל",
@@ -356,8 +347,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "למשל: 1-3, 5, 8-10",
     splitAction: "פצל והורד",
     splitInvalid: "טווח לא חוקי.",
-    comingSoon: "בקרוב: הסרת רקע ב-IA, דחיסת PDF",
-    useOCR: "OCR חכם (IA)",
-    ocrProcessing: "מבצע OCR..."
+    comingSoon: "בקרוב: הסרת רקע ב-IA, דחיסת PDF"
   }
 };
