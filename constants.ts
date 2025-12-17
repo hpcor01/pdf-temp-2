@@ -6,6 +6,7 @@ export const INITIAL_SETTINGS = {
   convertToPdf: true,
   saveSeparately: false,
   saveInGroup: false,
+  useOCR: false,
 };
 
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
@@ -69,7 +70,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     applyAdjustments: "Aplicar Ajustes",
     updateAvailable: "Nova versão disponível",
     updateNow: "Atualizar",
-    addPages: "Adicionar Páginas"
+    addPages: "Adicionar Páginas",
+    splitPdf: "Dividir PDF",
+    splitIntervals: "Intervalos de Página",
+    splitPlaceholder: "Ex: 1-3, 5, 8-10",
+    splitAction: "Dividir e Baixar",
+    splitInvalid: "Intervalo inválido. Use formatos como 1-3 ou 5.",
+    comingSoon: "Em breve: Remoção de fundo de imagens por IA, compressão de arquivos PDF",
+    useOCR: "OCR Inteligente (IA)",
+    ocrProcessing: "Realizando OCR..."
   },
   'en': {
     selectAll: "Select All",
@@ -131,7 +140,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     applyAdjustments: "Apply Adjustments",
     updateAvailable: "New version available",
     updateNow: "Update",
-    addPages: "Add Pages"
+    addPages: "Add Pages",
+    splitPdf: "Split PDF",
+    splitIntervals: "Page Ranges",
+    splitPlaceholder: "Ex: 1-3, 5, 8-10",
+    splitAction: "Split and Download",
+    splitInvalid: "Invalid range. Use formats like 1-3 or 5.",
+    comingSoon: "Coming soon: AI Background removal, PDF compression",
+    useOCR: "Smart OCR (AI)",
+    ocrProcessing: "Performing OCR..."
   },
   'es': {
     selectAll: "Seleccionar todos",
@@ -140,7 +157,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     saveSeparately: "Guardar por separado",
     saveInGroup: "Guardar en grupo",
     save: "Guardar",
-    saving: "Guardando...",
+    saving: "Salvando...",
     total: "Total",
     dragDrop: "Arrastra o agrega",
     dropHere: "Suelta los archivos",
@@ -149,7 +166,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     editorTitle: "Editor de Imagen",
     pdfEditorTitle: "Editor de PDF",
     undo: "Deshacer",
-    redo: "Rehacer",
+    redo: "Refazer",
     reset: "Restaurar",
     cancel: "Cancelar",
     confirm: "Confirmar Edición",
@@ -184,7 +201,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     nextPage: "Siguiente",
     prevPage: "Anterior",
     batchProcessError: "Error al procesar algunas imágenes.",
-    rightsReserved: "Todos los derechos reservados",
+    rightsReserved: "Todos los direitos reservados",
     supportLink: "Haga clic aquí para obtener soporte",
     footerQuote: '"No nos cansemos, pues, de hacer bien; porque a su tiempo segaremos" — Gálatas 6:9',
     brightness: "Brillo",
@@ -193,7 +210,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     applyAdjustments: "Aplicar Ajustes",
     updateAvailable: "Nueva versión disponible",
     updateNow: "Actualizar",
-    addPages: "Añadir páginas"
+    addPages: "Añadir páginas",
+    splitPdf: "Dividir PDF",
+    splitIntervals: "Intervalos de Página",
+    splitPlaceholder: "Ej: 1-3, 5, 8-10",
+    splitAction: "Dividir y Descargar",
+    splitInvalid: "Intervalo inválido. Use formatos como 1-3 ou 5.",
+    comingSoon: "Próximamente: Eliminación de fondo por IA, compresión de PDF",
+    useOCR: "OCR Inteligente (IA)",
+    ocrProcessing: "Realizando OCR..."
   },
   'el': {
     selectAll: "Επιλογή όλων",
@@ -255,7 +280,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     applyAdjustments: "Εφαρμογή",
     updateAvailable: "Νέα έκδοση διαθέσιμη",
     updateNow: "Ενημέρωση",
-    addPages: "Προσθήκη σελίδων"
+    addPages: "Προσθήκη σελίδων",
+    splitPdf: "Διαίρεση PDF",
+    splitIntervals: "Εύρος σελίδων",
+    splitPlaceholder: "Πχ: 1-3, 5, 8-10",
+    splitAction: "Διαίρεση και Λήψη",
+    splitInvalid: "Μη έγκυρο εύρος.",
+    comingSoon: "Σύντομα: Αφαίρεση φόντου με IA, συμπίεση PDF",
+    useOCR: "Έξυπνο OCR (IA)",
+    ocrProcessing: "Εκτέλεση OCR..."
   },
   'he': {
     selectAll: "בחר הכל",
@@ -317,6 +350,14 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     applyAdjustments: "החל",
     updateAvailable: "גרסה חדשה זמינה",
     updateNow: "עדכן",
-    addPages: "הוסף עמודים"
+    addPages: "הוסף עמודים",
+    splitPdf: "פצל PDF",
+    splitIntervals: "טווחי עמודים",
+    splitPlaceholder: "למשל: 1-3, 5, 8-10",
+    splitAction: "פצל והורד",
+    splitInvalid: "טווח לא חוקי.",
+    comingSoon: "בקרוב: הסרת רקע ב-IA, דחיסת PDF",
+    useOCR: "OCR חכם (IA)",
+    ocrProcessing: "מבצע OCR..."
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Sparkles } from 'lucide-react';
+import { Plus, X, Sparkles, Info } from 'lucide-react';
 import TopBar from './components/TopBar';
 import DocumentColumn from './components/DocumentColumn';
 import EditorModal from './components/EditorModal';
@@ -333,7 +333,8 @@ const App = () => {
 
     setIsSaving(true);
     try {
-      await generatePDF(docsToSave);
+      // Now including settings.useOCR
+      await generatePDF(docsToSave, settings.useOCR);
       
       // Success Logic
       setToast({ visible: true, message: t.docSaved, type: 'success' });
@@ -365,24 +366,21 @@ const App = () => {
   const getChangelog = () => {
     if (language === 'pt-BR') {
         return [
-            "Layout melhorado",
-            "Adicionado rodapé na aplicação",
-            "Agora o Αρχή PDF é capaz de ler e editar arquivos PDF",
-            "Novo visual na tela de edição de imagens",
+            "OCR Inteligente via IA (Torna PDFs pesquisáveis)",
+            "Funcionalidade de Divisão de PDF por intervalos",
+            "Layout melhorado e correções de bugs",
+            "Αρχή PDF é capaz de ler e editar arquivos PDF",
             "É possível mesclar imagens a arquivos PDF",
-            "Adicionado filtros de imagem",
-            "Agora é possível girar a imagem, diretamente no modal de edição"
+            "Adicionado filtros de imagem"
         ];
     }
-    // Fallback/Translation for other languages
     return [
-        "Improved layout",
-        "Added footer to the application",
-        "Αρχή PDF can now read and edit PDF files",
-        "New visual design for image editing screen",
-        "It is possible to merge images with PDF files",
-        "Added image filters",
-        "Now you can rotate imagem directly in the image editor modal"
+        "Smart OCR via AI (Makes PDFs searchable)",
+        "PDF Splitting by page ranges",
+        "Improved layout and bug fixes",
+        "Αρχή PDF can read and edit PDF files",
+        "Merge images with PDF files",
+        "Added image filters"
     ];
   };
 
@@ -455,7 +453,7 @@ const App = () => {
                  onClick={() => setShowVersionInfo(!showVersionInfo)} 
                  className="hover:text-emerald-500 transition font-medium underline decoration-dotted underline-offset-2"
                >
-                 Versão 2.0
+                 Versão 2.2
                </button>
              </p>
           </footer>
@@ -467,7 +465,7 @@ const App = () => {
              <div className="flex justify-between items-center mb-3">
                  <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
                     <Sparkles size={18} />
-                    <h3 className="font-bold text-base">Versão 2.0</h3>
+                    <h3 className="font-bold text-base">Versão 2.2</h3>
                  </div>
                  <button 
                    onClick={() => setShowVersionInfo(false)} 
@@ -476,11 +474,17 @@ const App = () => {
                    <X size={16}/>
                  </button>
              </div>
-             <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300 list-disc pl-4">
+             <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-300 list-disc pl-4 mb-4">
                  {getChangelog().map((feature, idx) => (
                     <li key={idx}>{feature}</li>
                  ))}
              </ul>
+             <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start space-x-2">
+                <Info size={16} className="text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-emerald-800 dark:text-emerald-200 font-medium">
+                  {t.comingSoon}
+                </p>
+             </div>
              <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white dark:bg-gray-800 border-b border-r border-emerald-500/30 rotate-45"></div>
           </div>
         )}

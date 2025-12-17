@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, ChevronDown, Trash, Eraser } from 'lucide-react';
+import { Globe, Moon, Sun, ChevronDown, Trash, Eraser, Cpu } from 'lucide-react';
 import { AppSettings, Language, Theme } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -106,16 +106,19 @@ const TopBar: React.FC<TopBarProps> = ({
 
         <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2"></div>
 
-        {/* Bulk AI Action */}
-        <button 
-          onClick={onRemoveBgBatch}
-          disabled={true}
-          className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition disabled:opacity-50"
-          title={t.removeBgBatch}
-        >
-          <Eraser size={16} />
-          <span className="text-sm font-medium">{t.removeBgBatch}</span>
-        </button>
+        {/* OCR Toggle */}
+        <label className="flex items-center space-x-2 cursor-pointer text-gray-600 dark:text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition group">
+           <div className={`p-1.5 rounded-lg transition-colors ${settings.useOCR ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-gray-100 dark:bg-gray-800'}`}>
+              <Cpu size={16} />
+           </div>
+           <input 
+             type="checkbox" 
+             checked={settings.useOCR}
+             onChange={(e) => updateSetting('useOCR', e.target.checked)}
+             className="custom-checkbox"
+           />
+           <span className="text-sm font-medium">{t.useOCR}</span>
+        </label>
 
         <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2"></div>
 
