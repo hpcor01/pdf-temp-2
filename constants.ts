@@ -7,7 +7,7 @@ export const INITIAL_SETTINGS = {
   convertToPdf: true,
   saveSeparately: false,
   saveInGroup: false,
-  useOCR: false,
+  useOCR: boolean,
 };
 
 // Fix: Added missing language keys 'he' and 'el' to the TRANSLATIONS object to match the Language type defined in types.ts.
