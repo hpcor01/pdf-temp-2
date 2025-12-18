@@ -432,7 +432,7 @@ const App = () => {
                  </div>
                  <button 
                    onClick={() => setShowVersionInfo(false)} 
-                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"c
                  >
                    <X size={16}/>
                  </button>
