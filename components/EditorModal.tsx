@@ -320,20 +320,8 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
   const handleZoomReset = () => setZoom(1);
 
   const handleRemoveBg = async () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    try {
-      let sourceUrl = currentImage;
-      if (brightness !== 100 || contrast !== 100 || rotation !== 0) {
-          sourceUrl = await applyImageAdjustments(currentImage, brightness, contrast, rotation);
-      }
-      const newUrl = await removeBackground(sourceUrl);
-      pushToHistory(newUrl);
-    } catch (e) {
-      alert("Background removal failed.");
-    } finally {
-      setIsProcessing(false);
-    }
+    // Permanently disabled
+    return;
   };
 
   const handleApplyAdjustments = async () => {
@@ -451,12 +439,13 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
             <div className="space-y-4">
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t.imageTools}</div>
               
+              {/* Individual Remove BG Button - Permanently Disabled (Coming Soon) */}
               <button 
-                onClick={() => { setActiveTool('none'); handleRemoveBg(); }}
-                disabled={activeTool === 'crop'}
-                className="w-full flex items-center p-3 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-200 disabled:opacity-50"
+                disabled={true}
+                className="w-full flex items-center p-3 rounded bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed text-gray-400"
+                title={language === 'pt-BR' ? "Remoção de fundo por IA (Em breve)" : "AI Background Removal (Coming soon)"}
               >
-                <Eraser className="mr-3 text-emerald-500 dark:text-emerald-400" size={18} />
+                <Eraser className="mr-3 text-gray-400" size={18} />
                 {t.removeBg}
               </button>
 
