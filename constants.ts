@@ -57,6 +57,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     zoomIn: "Aumentar Zoom",
     zoomOut: "Diminuir Zoom",
     zoomReset: "Restaurar Zoom",
+    eUndo: "Desfazer",
+    eRedo: "Refazer",
+    eReset: "Reset",
+
     backToGrid: "Voltar para Grade",
     viewPage: "Visualizar Página",
     nextPage: "Próxima",

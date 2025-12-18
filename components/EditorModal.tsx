@@ -426,9 +426,9 @@ const EditorModal: React.FC<EditorModalProps> = ({ item, isOpen, onClose, onUpda
                <button onClick={handleZoomReset} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition ml-1" title={t.zoomReset}><Search size={16} /></button>
              </div>
 
-             <button onClick={handleUndo} disabled={currentIndex <= 0} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 transition rounded hover:bg-gray-100 dark:hover:bg-gray-800"><Undo size={18} /></button>
-             <button onClick={handleRedo} disabled={currentIndex >= history.length - 1} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 transition rounded hover:bg-gray-100 dark:hover:bg-gray-800"><Redo size={18} /></button>
-             <button onClick={handleReset} disabled={currentIndex === 0 && history.length === 1} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 transition rounded hover:bg-gray-100 dark:hover:bg-gray-800"><RotateCcw size={18} /></button>
+             <button onClick={handleUndo} disabled={currentIndex <= 0} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 transition rounded hover:bg-gray-100 dark:hover:bg-gray-800" title={t.eUndo}><Undo size={18} /></button>
+             <button onClick={handleRedo} disabled={currentIndex >= history.length - 1} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 transition rounded hover:bg-gray-100 dark:hover:bg-gray-800" title={t.eRedo}><Redo size={18} /></button>
+             <button onClick={handleReset} disabled={currentIndex === 0 && history.length === 1} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 transition rounded hover:bg-gray-100 dark:hover:bg-gray-800" title={t.eReset}><RotateCcw size={18} /></button>
              <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-2" />
              <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"><X /></button>
           </div>
