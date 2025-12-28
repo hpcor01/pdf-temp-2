@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, ChevronDown, Trash, Eraser, AlertTriangle } from 'lucide-react';
+import { Globe, Moon, Sun, ChevronDown, Trash, Maximize, AlertTriangle, Undo2 } from 'lucide-react';
 import { AppSettings, Language, Theme } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -10,10 +10,13 @@ interface TopBarProps {
   onSave: () => void;
   onClearAll: () => void;
   onRemoveBgBatch: () => void;
+  onUndoBatch?: () => void;
+  canUndo?: boolean;
   isSaving: boolean;
   isProcessing: boolean;
   isPdfSelected: boolean;
   allSelected: boolean;
+  hasSelection: boolean;
   onToggleSelectAll: (selected: boolean) => void;
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -35,10 +38,13 @@ const TopBar: React.FC<TopBarProps> = ({
   onSave, 
   onClearAll,
   onRemoveBgBatch,
+  onUndoBatch,
+  canUndo,
   isSaving,
   isProcessing,
   isPdfSelected,
   allSelected,
+  hasSelection,
   onToggleSelectAll,
   language,
   setLanguage,
@@ -110,17 +116,33 @@ const TopBar: React.FC<TopBarProps> = ({
       {/* Right Area: Main Actions */}
       <div className="flex items-center space-x-6">
         
-        {/* Batch Remove Background - Permanently Disabled (Coming Soon) */}
-        <button 
-          disabled={true}
-          className="flex items-center space-x-2 transition-all opacity-30 cursor-not-allowed grayscale text-gray-500 dark:text-gray-400"
-          title={language === 'pt-BR' ? "Remoção de fundo por IA (Em breve)" : "AI Background Removal (Coming soon)"}
-        >
-          <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-            <Eraser size={18} />
-          </div>
-          <span className="text-sm font-semibold whitespace-nowrap hidden lg:inline">{t.removeBgBatch}</span>
-        </button>
+        {/* Batch Auto Crop Actions */}
+        <div className="flex items-center space-x-2">
+            <button 
+              onClick={onRemoveBgBatch}
+              disabled={isSaving || isProcessing || !hasSelection}
+              className="flex items-center space-x-2 transition-all text-gray-700 dark:text-gray-200 hover:text-emerald-500 dark:hover:text-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed group"
+              title={t.autoCropBatch}
+            >
+              <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30 transition-colors">
+                <Maximize size={18} />
+              </div>
+              <span className="text-sm font-semibold whitespace-nowrap hidden lg:inline">{t.autoCropBatch}</span>
+            </button>
+
+            {/* Undo Batch Action */}
+            <button 
+              onClick={onUndoBatch}
+              disabled={isSaving || isProcessing || !canUndo}
+              className="flex items-center space-x-2 transition-all text-gray-700 dark:text-gray-200 hover:text-orange-500 dark:hover:text-orange-400 disabled:opacity-30 disabled:cursor-not-allowed group"
+              title={t.undo}
+            >
+              <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/30 transition-colors">
+                <Undo2 size={18} />
+              </div>
+              <span className="text-sm font-semibold whitespace-nowrap hidden lg:inline">{t.undo}</span>
+            </button>
+        </div>
 
         <button 
           onClick={onClearAll}
