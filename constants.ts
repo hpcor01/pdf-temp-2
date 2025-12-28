@@ -1,4 +1,3 @@
-
 import { Language } from './types';
 
 export const SUPPORTED_FORMATS = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'application/pdf'];
@@ -81,10 +80,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "Ex: 1-3, 5, 8-10",
     splitAction: "Dividir e Baixar",
     splitInvalid: "Intervalo inválido. Use formatos como 1-3 ou 5.",
-    comingSoon: "Em breve: Compressão de PDF, e remoção de fundo por IA.",
+    comingSoon: "Em breve: Compressão de PDF e remoção de fundo por IA.",
     useOCR: "OCR (Texto Pesquisável)",
     ocrWarning: "O OCR torna o processo muito mais lento",
-    ocrProcessing: "Reconhecendo texto (OCR)..."
+    ocrProcessing: "Reconhecendo texto (OCR)...",
+    about: "Sobre",
+    aboutTitle: "Sobre Αρχή PDF",
+    developedBy: "Criado e desenvolvido por",
+    openSourceLicenses: "Licenças Open Source",
+    version: "Versão"
   },
   'en': {
     selectAll: "Select All",
@@ -152,10 +156,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "Ex: 1-3, 5, 8-10",
     splitAction: "Split and Download",
     splitInvalid: "Invalid range. Use formats like 1-3 or 5.",
-    comingSoon: "Coming soon: PDF Compression, and AI background removal.",
+    comingSoon: "Coming soon: PDF Compression and AI background removal.",
     useOCR: "OCR (Searchable Text)",
     ocrWarning: "OCR makes the process much slower",
-    ocrProcessing: "Recognizing text (OCR)..."
+    ocrProcessing: "Recognizing text (OCR)...",
+    about: "About",
+    aboutTitle: "About Αρχή PDF",
+    developedBy: "Created and developed by",
+    openSourceLicenses: "Open Source Licenses",
+    version: "Version"
   },
   'es': {
     selectAll: "Seleccionar todos",
@@ -223,10 +232,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "Ej: 1-3, 5, 8-10",
     splitAction: "Dividir y Descargar",
     splitInvalid: "Intervalo inválido. Use formatos como 1-3 o 5.",
-    comingSoon: "Próximamente: Compresión de PDF, e eliminación de fondo por IA.",
+    comingSoon: "Próximamente: Compresión de PDF e eliminación de fondo por IA.",
     useOCR: "OCR (Texto buscable)",
     ocrWarning: "El OCR hace que el proceso sea mucho más lento",
-    ocrProcessing: "Reconociendo texto (OCR)..."
+    ocrProcessing: "Reconociendo texto (OCR)...",
+    about: "Sobre",
+    aboutTitle: "Sobre Αρχή PDF",
+    developedBy: "Creado y desarrollado por",
+    openSourceLicenses: "Licencias Open Source",
+    version: "Versión"
   },
   'he': {
     selectAll: "בחר הכל",
@@ -294,10 +308,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "למשל: 1-3, 5, 8-10",
     splitAction: "פצל והורד",
     splitInvalid: "טווח לא תקין. השתמש בפורמט כמו 1-3 ou 5.",
-    comingSoon: "Coming soon: PDF Compression, and AI background removal.",
+    comingSoon: "Coming soon: PDF Compression and AI background removal.",
     useOCR: "OCR (טקסט ניתן לחיפוש)",
     ocrWarning: "OCR הופך את התהליך לאיטי יותר",
-    ocrProcessing: "מזהה טקסט (OCR)..."
+    ocrProcessing: "מזהה טקסט (OCR)...",
+    about: "אודות",
+    aboutTitle: "אודות Αρχή PDF",
+    developedBy: "נוצר ופותח על ידי",
+    openSourceLicenses: "רישיונות קוד פתוח",
+    version: "גרסה"
   },
   'el': {
     selectAll: "Επιλογή όλων",
@@ -365,9 +384,14 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     splitPlaceholder: "Π.χ.: 1-3, 5, 8-10",
     splitAction: "Διαχωρισμός και λήψη",
     splitInvalid: "Μη έγκυρο εύρος.",
-    comingSoon: "Coming soon: PDF Compression, and AI background removal.",
+    comingSoon: "Coming soon: PDF Compression and AI background removal.",
     useOCR: "OCR (Αναζητήσιμο κείμενο)",
     ocrWarning: "Το OCR καθυστερεί τη διαδικασία",
-    ocrProcessing: "Αναγνώριση κειμένου (OCR)..."
+    ocrProcessing: "Αναγνώριση κειμένου (OCR)...",
+    about: "Σχετικά",
+    aboutTitle: "Σχετικά με το Αρχή PDF",
+    developedBy: "Δημιουργήθηκε και αναπτύχθηκε από",
+    openSourceLicenses: "Άδειες Ανοιχτού Κώδικα",
+    version: "Έκδοση"
   }
 };
