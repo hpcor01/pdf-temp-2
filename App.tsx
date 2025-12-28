@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Sparkles, Info } from 'lucide-react';
+import { Plus, X, Sparkles, Info, Users, ShieldCheck } from 'lucide-react';
 import TopBar from './components/TopBar';
 import DocumentColumn from './components/DocumentColumn';
 import EditorModal from './components/EditorModal';
@@ -40,8 +40,9 @@ const App = () => {
   // Update Availability State
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   
-  // Version Info State
+  // Modals States
   const [showVersionInfo, setShowVersionInfo] = useState(false);
+  const [showAboutInfo, setShowAboutInfo] = useState(false);
 
   const t = TRANSLATIONS[language];
 
@@ -330,10 +331,10 @@ const App = () => {
   const getChangelog = () => {
     if (language === 'pt-BR') {
         return [
+            "NOVO: Recorte Manual com Perspectiva (Correção de homografia)",
             "OCR Inteligente (Torna PDFs pesquisáveis)",
             "Funcionalidade de Divisão de PDF por intervalos",
             "Layout melhorado e correções de bugs",
-            "Adicionado rodapé na aplicação",
             "Αρχή PDF é capaz de ler e editar arquivos PDF",
             "É possível mesclar imagens a arquivos PDF",
             "Adicionado filtros de imagem",
@@ -341,16 +342,26 @@ const App = () => {
         ];
     }
     return [
+        "NEW: Manual Perspective Crop (Homography correction)",
         "Smart OCR (Makes PDFs searchable)",
         "PDF Splitting by page ranges",
         "Improved layout and bug fixes",
-        "Added footer to the application",
         "Αρχή PDF can read and edit PDF files",
         "Merge images with PDF files",
         "Added image filters",
         "Rotate images directly in the image editor modal"
     ];
   };
+
+  const getLicenses = () => [
+    { name: "React", license: "MIT" },
+    { name: "Lucide React", license: "ISC" },
+    { name: "PDF-lib", license: "MIT" },
+    { name: "PDF.js", license: "Apache 2.0" },
+    { name: "Tesseract.js", license: "Apache 2.0" },
+    { name: "@imgly/background-removal", license: "MIT" },
+    { name: "Tailwind CSS", license: "MIT" }
+  ];
 
   return (
     <div className={theme}>
@@ -414,21 +425,28 @@ const App = () => {
                Αρχή PDF© {new Date().getFullYear()} - {t.rightsReserved}. |{' '}
                <a title="Help" href="mailto:ti@advocaciabichara.com.br" className="hover:text-emerald-500 transition">{t.supportLink}</a> |{' '}
                <button 
-                 onClick={() => setShowVersionInfo(!showVersionInfo)} 
+                 onClick={() => { setShowAboutInfo(false); setShowVersionInfo(!showVersionInfo); }} 
                  className="hover:text-emerald-500 transition font-medium underline decoration-dotted underline-offset-2"
                >
-                 Versão 2.1
+                 {t.version} 2.2
+               </button> |{' '}
+               <button 
+                 onClick={() => { setShowVersionInfo(false); setShowAboutInfo(!showAboutInfo); }} 
+                 className="hover:text-emerald-500 transition font-medium underline decoration-dotted underline-offset-2"
+               >
+                 {t.about}
                </button>
              </p>
           </footer>
         </main>
 
+        {/* Modal Versão / Changelog */}
         {showVersionInfo && (
           <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-emerald-500/30 z-[60] w-80 text-left transition-all duration-300 animate-slide-up">
              <div className="flex justify-between items-center mb-3">
                  <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
                     <Sparkles size={18} />
-                    <h3 className="font-bold text-base">Versão 2.1</h3>
+                    <h3 className="font-bold text-base">{t.version} 2.2</h3>
                  </div>
                  <button 
                    onClick={() => setShowVersionInfo(false)} 
@@ -448,6 +466,49 @@ const App = () => {
                   {t.comingSoon}
                 </p>
              </div>
+             <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white dark:bg-gray-800 border-b border-r border-emerald-500/30 rotate-45"></div>
+          </div>
+        )}
+
+        {/* Modal Sobre / Créditos */}
+        {showAboutInfo && (
+          <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-emerald-500/30 z-[60] w-80 sm:w-96 text-left transition-all duration-300 animate-slide-up overflow-hidden">
+             <div className="flex justify-between items-center mb-4 p-1">
+                 <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
+                    <Users size={18} />
+                    <h3 className="font-bold text-base">{t.aboutTitle}</h3>
+                 </div>
+                 <button 
+                   onClick={() => setShowAboutInfo(false)} 
+                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                 >
+                   <X size={16}/>
+                 </button>
+             </div>
+             
+             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                <section>
+                   <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {t.developedBy} <strong>L. Stivan</strong> e <strong>Hugo Cordeiro</strong>.
+                   </p>
+                </section>
+
+                <section className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                   <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 mb-3">
+                      <ShieldCheck size={16} />
+                      <span className="text-xs font-bold uppercase tracking-wider">{t.openSourceLicenses}</span>
+                   </div>
+                   <div className="grid grid-cols-1 gap-2">
+                      {getLicenses().map((lib, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
+                           <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{lib.name}</span>
+                           <span className="text-[10px] font-black bg-gray-200 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded">{lib.license}</span>
+                        </div>
+                      ))}
+                   </div>
+                </section>
+             </div>
+
              <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white dark:bg-gray-800 border-b border-r border-emerald-500/30 rotate-45"></div>
           </div>
         )}
